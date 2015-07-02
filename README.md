@@ -38,5 +38,5 @@ instructions:
 
     > python -m numjuggler -h
 
-
+There is also a repository on github, related to numjuggler documentation: https://github.com/inr-kit/numjuggler.docs . 
 
