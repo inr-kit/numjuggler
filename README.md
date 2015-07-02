@@ -16,8 +16,8 @@ be used from the command line in the following way:
 where ... -- are command line options specifying the input file and the rules
 how cells, surfaces, etc. are renamed.
 
-Alternatively, you can use pip -- a tool for installing Python packages
-(depending on Python version, it mst be installed separately). Unzipping the
+Alternatively, you can use [pip](https://pip.pypa.io/en/stable/) -- a tool for installing Python packages
+(for some Python distributions it is included, otherwise must be installed separately). Unzipping the
 archive in this case is not needed, and installation is done with the command
 
     > pip install numjuggler-X.X.X.tar.gz --user
