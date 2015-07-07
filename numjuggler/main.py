@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse as ap
+import os.path
 from numjuggler import numbering as mn
 from numjuggler import parser as mp
 
@@ -230,7 +231,14 @@ def main():
     else:
         args = p.parse_args(clo)
         if args.debug:
-            debuglog = open('debug.juggler.' + args.inp, 'w')
+            # args.inp can be a path with folders. Ensure that the prefix
+            # 'debug.juggler' is added to the base filename only.
+            d, f = os.path.split(args.inp)
+            debug_file_name = os.path.join(d, 'debug.juggler.' + f)
+            print
+            print 'Debug info written to ', debug_file_name
+            print
+            debuglog = open(debug_file_name, 'w')
             print >> debuglog, 'command line arguments:', args
         else:
             debuglog = None
