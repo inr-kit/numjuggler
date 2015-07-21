@@ -235,9 +235,9 @@ def main():
             # 'debug.juggler' is added to the base filename only.
             d, f = os.path.split(args.inp)
             debug_file_name = os.path.join(d, 'debug.juggler.' + f)
-            print
-            print 'Debug info written to ', debug_file_name
-            print
+            # print
+            # print 'Debug info written to ', debug_file_name
+            # print
             debuglog = open(debug_file_name, 'w')
             print >> debuglog, 'command line arguments:', args
         else:
