@@ -59,7 +59,32 @@ uexp:
     Add explicit "u=0" to cells with no "u" parameter. This can be useful when
     combining several input files into one model using universes. When cells
     have explicit zero universes, they can be renumbered using the -u or --map
-    option in subsequent runs.  """
+    option in subsequent runs.  
+
+split: 
+    Split input into several files containing separate blocks. Output is written
+    to files
+
+        inp.1message
+        inp.2title
+        inp.3cells
+        inp.4surfaces
+        inp.5data
+
+    where inp is replaced by the name of the ofiginal input file. Note that
+    separate blocks do not contain blank lines. In order to concatenate block files 
+    together into a single input, one needs to insert blank lines:
+
+    > numjuggler --mode split inp_
+    > cat inp_.[1-5]* > inp2_          # inp2_ lacks all blank lines
+    > echo '' > bl
+    > cat inp_.1* bl inp_.2* bl inp_.3* bl inp_.4* bl inp_.5* bl > inp3_ # inp3_ is equivalent to inp_
+
+
+mdupl:
+    remove duplicate material cards. If an input file contains several mateiral
+    cards with the same name (number), only the first one is kept, the other
+    are skipped.  """
 
 dhelp['map'] = """
 MAP FILE GENERAL INFO
@@ -212,7 +237,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -289,6 +314,53 @@ def main():
             for c in cards:
                 c.remove_spaces()
                 print c.card(),
+
+        elif args.mode == 'split':
+            # split input file into blocks
+            fp = {}
+            fp[mp.CID.message] = open(args.inp + '.1message', 'w')
+            fp[mp.CID.title]   = open(args.inp + '.2title', 'w')
+            fp[mp.CID.cell]    = open(args.inp + '.3cells', 'w')
+            fp[mp.CID.surface] = open(args.inp + '.4surfaces', 'w')
+            fp[mp.CID.data]    = open(args.inp + '.5data', 'w')
+            cct = cards[0].ctype
+            cmnt = None
+            for c in cards:
+                # blank line is attached to the end of block.
+                # Comment is printed before the next card.
+                if c.ctype > 0:
+                    # where to print is defined by card ctype:
+                    fff = fp[c.ctype]
+                if c.ctype == mp.CID.comment:
+                    # remember comment to print before next meaningful card
+                    cmnt = c
+                else:
+                    if cmnt:
+                        print >> fff, cmnt.card(),
+                        cmnt = None
+                    if c.ctype != mp.CID.blankline:
+                        # do not print blank lines
+                        print >> fff, c.card(),
+            # do not forget the last comment
+            if cmnt:
+                print >> fff, cmnt.card(),
+
+
+            for fff in fp.values():
+                fff.close()
+
+        elif args.mode == 'mdupl':
+            # remove duplicate material cards, if they are equal.
+
+            mset = set()
+            for c in cards:
+                c.get_values()
+                if c.ctype == mp.CID.data and c.dtype == 'Mn':
+                    if c.values[0][0] not in mset:
+                        print c.card(),
+                        mset.add(c.values[0][0])
+                else:
+                    print c.card(),
 
         elif args.mode == 'renum':
             for c in cards:
