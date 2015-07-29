@@ -230,7 +230,9 @@ class Card(object):
         if self.ctype == CID.cell:
             inpt, vt = _split_cell(self.input)
         elif self.ctype == CID.surface:
-            inpt, vt = _split_surface(self.input)
+            inpt, vt, stype, scoef = _split_surface(self.input)
+            self.stype = stype.lower()
+            self.scoefs = scoef
         elif self.ctype == CID.data:
             inpt, vt, dtype = _split_data(self.input)
             self.dtype = dtype
@@ -474,22 +476,27 @@ def _split_surface(input_):
         inpt = inpt.replace(ns, tp, 1)
         vals.append((int(ns), 'tr'))
         fmts.append(fmt_d(ns))
+        st = t.pop(0) 
     elif ns[0] == '-':
         # periodic surface
         ns = ns[1:]
         inpt = inpt.replace(ns, tp, 1)
         vals.append((int(ns), 'sur'))
         fmts.append(fmt_d(ns))
+        st = t.pop(0)
     elif ns[0].isalpha():
         # ns is the surface type
-        pass
+        st = ns
     else:
         raise ValueError(input_, inpt, ns)
+
+    # define coefficients
+    scoef = map(float, t)
 
     for f in fmts:
         inpt = inpt.replace(tp, f, 1)
 
-    return inpt.split('\n'), vals
+    return inpt.split('\n'), vals, st, scoef
 
 def _get_int(s):
     r = ''
@@ -714,6 +721,83 @@ def get_cards(inp, debug=None):
         if cmnt:
             yield _yield(cmnt, CID.comment, cln - len(cmnt))
 
+
+def are_close_lists(x, y, re=1e-4, pci=[]):
+    """
+    Return True if x and y are close.
+    """
+    if len(x) != len(y):
+        res = False
+        msg = 'Different lenght'
+
+    # pci -- list of indices that define elements of x and y to be checked for proportionality only.
+    if len(pci) == 0:
+        # empty list means all x and y elements compare without arbitrary normalization.
+        xe = x[:]
+        ye = y[:]
+        xp = []
+        yp = []
+    else:
+        if len(pci) %2 == 1:
+            # augment with len(x) +1
+            pci = tuple(pci) + (len(x) + 1, )
+        xe = []
+        ye = []
+        xp = []
+        yp = []
+        i = 0
+        for i1, i2 in zip(pci[0::2], pci[1::2]):
+            xe += x[i:i1]
+            ye += y[i:i1]
+            xp += x[i1:i2]
+            yp += y[i1:i2]
+            i = i2
+
+    # normalize yp
+    xpn = sum(map(lambda e: e**2, xp))
+    ypn = sum(map(lambda e: e**2, yp))
+    if xpn > 0 and ypn > 0:
+        yp = map(lambda e: e*xpn/ypn, yp)
+
+    msg = []
+    res = []
+    for xl, yl in zip([xe, xp], [ye, yp]):
+        # compare xl and yl without normalization
+        if xl == yl:
+            res.append(True)
+            msg.append('exact match')
+        else:
+            n = 0 
+            for xx, yy in zip(xl, yl):
+                if xx == yy:
+                    r = True
+                elif xx != 0:
+                    r = abs((xx - yy)/xx) <= re
+                else:
+                    r = abs((xx - yy)/xx) <= re
+                if not r:
+                    m = 'diff at {}'.format(n)
+                    break
+            else:
+                m = 'all elements are close or equal'
+                r = True
+            res.append(r)
+            msg.append(m)
+
+        if not res[-1]:
+            result = False
+            break
+
+    else:
+        result = True
+    print 'are_equal', x, y, re, pci
+    for xl, yl, r, m in zip([xe, xp], [ye, yp], res, msg):
+        print ' '*5, m, r, ':'
+        print ' '*15, xl
+        print ' '*15, yl
+        if r:
+            break
+    return result
 
 
 

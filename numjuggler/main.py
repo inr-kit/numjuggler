@@ -237,7 +237,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -361,6 +361,38 @@ def main():
                         mset.add(c.values[0][0])
                 else:
                     print c.card(),
+
+        elif args.mode == 'sdupl':
+            # report duplicate (close) surfaces.
+            # dict of unique surafces
+            us = {}
+
+            #  surface types coefficients that can only be proportional
+            pcl =  {
+                    'p': (0,),
+                    'sq': (0, 7),
+                    'gq': (0,)
+                    }
+            for c in cards:
+                c.get_values()
+                if c.ctype == mp.CID.surface:
+                    # compare this surface with all previous and if unique, add to dict
+                    print '--surface', c.card(),
+                    ust = us.get(c.stype, {})
+                    if ust == {}:
+                        us[c.stype] = ust
+                    for sn, s in ust.items():
+                        if s.stype == c.stype:
+                            # current surface card and s have the same type. Compare coefficients:
+                            if mp.are_close_lists(s.scoefs, c.scoefs, pci=pcl.get(c.stype, [])):
+                                print 'is close to {}'.format(sn)
+                                break
+                    else:
+                        # add c to us:
+                        cn = c.values[0][0]  # surface name
+                        ust[cn] = c
+                        print 'is unique'
+
 
         elif args.mode == 'renum':
             for c in cards:
