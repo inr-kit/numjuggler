@@ -237,7 +237,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -392,6 +392,19 @@ def main():
                         cn = c.values[0][0]  # surface name
                         ust[cn] = c
                         print 'is unique'
+
+        elif args.mode == 'msimp':
+            # simplify material cards
+            for c in cards:
+                if c.ctype == mp.CID.data:
+                    c.get_values()
+                    if c.dtype == 'Mn':
+                        inp = []
+                        inp.append(c.input[0].replace('} ', '} 1001 1.0 $ msimpl ', 1))
+                        for i in c.input[1:]:
+                            inp.append('c msimpl ' + i)
+                        c.input = inp
+                print c.card(),
 
 
         elif args.mode == 'renum':
