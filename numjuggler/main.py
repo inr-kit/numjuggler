@@ -237,7 +237,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -405,6 +405,41 @@ def main():
                             inp.append('c msimpl ' + i)
                         c.input = inp
                 print c.card(),
+
+        elif args.mode == 'extr':
+            # extract cell specified in -c keyword and necessary materials, and surfaces.
+            cn = int(args.c)
+            # first, get all surfaces needed to represent the cn cell.
+            for c in cards:
+                c.get_values()
+                if c.ctype == mp.CID.cell and c.name == cn:
+                    # get all surface names and the material, if any.
+                    sset = set()
+                    mset = set()
+                    for v, t in c.values:
+                        if t == 'sur':
+                            sset.add(v)
+                        elif t == 'mat':
+                            mset.add(v)
+            blk = None
+            for c in cards:
+                if c.ctype == mp.CID.message:
+                    print c.card(),
+                if blk != mp.CID.cell and c.ctype == mp.CID.cell and c.name == cn:
+                    print c.card(),
+                    blk = c.ctype
+                if c.ctype == mp.CID.surface:
+                    if blk == mp.CID.cell:
+                        print
+                        blk = c.ctype
+                    if  c.name in sset:
+                        print c.card(),
+                if c.ctype == mp.CID.data and c.dtype == 'Mn' and c.values[0][0] in mset:
+                    if blk != c.ctype:
+                        print
+                        blk = c.ctype
+                    print c.card(),
+
 
 
         elif args.mode == 'renum':

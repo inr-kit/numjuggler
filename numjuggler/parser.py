@@ -229,10 +229,12 @@ class Card(object):
         self._protect_nums()
         if self.ctype == CID.cell:
             inpt, vt = _split_cell(self.input)
+            self.name = vt[0][0] 
         elif self.ctype == CID.surface:
             inpt, vt, stype, scoef = _split_surface(self.input)
             self.stype = stype.lower()
             self.scoefs = scoef
+            self.name = vt[0][0]
         elif self.ctype == CID.data:
             inpt, vt, dtype = _split_data(self.input)
             self.dtype = dtype
