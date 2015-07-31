@@ -410,20 +410,29 @@ def main():
             # extract cell specified in -c keyword and necessary materials, and surfaces.
             cn = int(args.c)
             # first, get all surfaces needed to represent the cn cell.
+            sset = set() # surfaces
+            mset = set() # material
+            tset = set() # transformations
             for c in cards:
                 c.get_values()
                 if c.ctype == mp.CID.cell and c.name == cn:
                     # get all surface names and the material, if any.
-                    sset = set()
-                    mset = set()
                     for v, t in c.values:
                         if t == 'sur':
                             sset.add(v)
                         elif t == 'mat':
                             mset.add(v)
+                        elif t == 'tr':
+                            tset.add(v)
+                if c.ctype == mp.CID.surface and c.name in sset:
+                    # surface card can refer to tr
+                    for v, t in c.values:
+                        if t == 'tr':
+                            tset.add(v)
+
             blk = None
             for c in cards:
-                if c.ctype == mp.CID.message:
+                if c.ctype == mp.CID.title:
                     print c.card(),
                 if blk != mp.CID.cell and c.ctype == mp.CID.cell and c.name == cn:
                     print c.card(),
@@ -434,11 +443,14 @@ def main():
                         blk = c.ctype
                     if  c.name in sset:
                         print c.card(),
-                if c.ctype == mp.CID.data and c.dtype == 'Mn' and c.values[0][0] in mset:
+                if c.ctype == mp.CID.data :
                     if blk != c.ctype:
                         print
                         blk = c.ctype
-                    print c.card(),
+                    if c.dtype == 'Mn' and c.values[0][0] in mset:
+                        print c.card(),
+                    if c.dtype == 'TRn' and c.values[0][0] in tset:
+                        print c.card(),
 
 
 

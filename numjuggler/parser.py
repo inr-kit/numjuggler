@@ -55,6 +55,7 @@ class __CIDClass(object):
             if '__' not in k and v == cid:
                 return k
         else:
+            print 'No attribute with name', cid
             raise ValueError()
 
 CID = __CIDClass()
@@ -697,6 +698,8 @@ def get_cards(inp, debug=None):
                 yield _yield(l, CID.blankline, cln)
                 ncid += 1
                 card = []
+                if ncid == 6:
+                    break
             elif l[0:5] == '     ' or cf:
                 # l is continuation line.
                 if cmnt:
