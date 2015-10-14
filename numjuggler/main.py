@@ -408,14 +408,14 @@ def main():
 
         elif args.mode == 'extr':
             # extract cell specified in -c keyword and necessary materials, and surfaces.
-            cn = int(args.c)
+            cset = set(map(int, args.c.split()))
             # first, get all surfaces needed to represent the cn cell.
             sset = set() # surfaces
             mset = set() # material
             tset = set() # transformations
             for c in cards:
                 c.get_values()
-                if c.ctype == mp.CID.cell and c.name == cn:
+                if c.ctype == mp.CID.cell and c.name in cset:
                     # get all surface names and the material, if any.
                     for v, t in c.values:
                         if t == 'sur':
@@ -434,7 +434,7 @@ def main():
             for c in cards:
                 if c.ctype == mp.CID.title:
                     print c.card(),
-                if blk != mp.CID.cell and c.ctype == mp.CID.cell and c.name == cn:
+                if blk != mp.CID.cell and c.ctype == mp.CID.cell and c.name in cset:
                     print c.card(),
                     blk = c.ctype
                 if c.ctype == mp.CID.surface:
@@ -451,7 +451,6 @@ def main():
                         print c.card(),
                     if c.dtype == 'TRn' and c.values[0][0] in tset:
                         print c.card(),
-
 
 
         elif args.mode == 'renum':
