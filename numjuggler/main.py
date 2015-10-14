@@ -4,6 +4,7 @@ import argparse as ap
 import os.path
 from numjuggler import numbering as mn
 from numjuggler import parser as mp
+from numjuggler import nogq
 
 
 # help messages already wrapped:
@@ -84,7 +85,25 @@ split:
 mdupl:
     remove duplicate material cards. If an input file contains several mateiral
     cards with the same name (number), only the first one is kept, the other
-    are skipped.  """
+    are skipped. 
+
+
+sdupl:
+    Report duplicate (close) surfaces.
+
+
+msimp:
+    Simplify material cards.
+    
+    
+extr:
+    Extract the cell specified in the -c keyword together with materials, surfaces 
+    and transformations.
+    
+    
+nogq:
+    Under development. Replaces GQ cards representing a cylinder with c/x plut tr card."""
+
 
 dhelp['map'] = """
 MAP FILE GENERAL INFO
@@ -237,7 +256,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -451,6 +470,42 @@ def main():
                         print c.card(),
                     if c.dtype == 'TRn' and c.values[0][0] in tset:
                         print c.card(),
+        
+        elif args.mode == 'nogq':
+            vfmt = ' {:15.8e}'*3
+            tfmt = 'tr{} 0 0 0 ' + ('\n     ' + vfmt)*3
+            trd = {} 
+            # replace GQ cylinders with c/x + tr 
+            for c in cards:
+                crd = c.card()
+                if c.ctype == mp.CID.surface:
+                    c.get_values()
+                    if c.stype == 'gq':
+                        p = nogq.get_gq_params(' '.join(c.input))
+                        a2, g, k = nogq.get_k(p)
+                        crd = crd[:-1] + '$ a^2={:12.6e} c={:12.6e}\n'.format(a2, g + a2)
+                        if abs((g + a2) / a2) < 1e-6:
+                            # this is a cylinder. Comment original card and write another one
+                            R, x0, i, j = nogq.cylinder(p, a2, g, k)                            
+                            # add transformation set
+                            tr = tuple(i) + tuple(j) + tuple(k) 
+                            for k, v in trd.items():
+                                if tr == v:
+                                    trn = k
+                                    break
+                            else:
+                                trn = len(trd) + 1
+                                trd[trn] = tr
+                            # replace surface card
+                            crd = 'c ' + '\nc '.join(c.card().splitlines())
+                            crd += '\n{} {} c/z {:15.8e} 0 {:15.8e}\n'.format(c.name, trn, x0, R)
+                print crd,
+                if trd and c.ctype == mp.CID.blankline:
+                    # this is blankline after surfaces. Put tr cards here
+                    for k, v in sorted(trd.items()):
+                        ijk = (k,) + v 
+                        print tfmt.format(*ijk)
+                    trd = {}
 
 
         elif args.mode == 'renum':
