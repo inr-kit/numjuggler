@@ -101,6 +101,10 @@ class Card(object):
         # List of (v, t) tuples, where v -- value and t -- its type.
         self.values = []
 
+        # some properties defined on demand
+        self.__u = -1 # -1 means undefined. None -- not specified in input 
+        self.__f = -1 # fill
+
         # Split card to template and meaningful part is always needed. Other operations
         # are optional.
         self.get_input()
@@ -248,6 +252,45 @@ class Card(object):
 
         self.print_debug('get_values', 'iv')
         return
+
+    def get_u(self):
+        """
+        Returns universe, the cells belongs to.
+        """
+        if self.ctype != CID.cell:
+            return None
+        if self.__u != -1:
+            return self.__u
+        else:
+            # get it only once:
+            for v, t in self.values:
+                if t == 'u':
+                    self.__u = v
+                    break
+            else:
+                self.__u = None
+            return self.__u
+
+    def get_f(self):
+        """
+        Returns universe, the cells belongs to.
+        """
+        if self.ctype != CID.cell:
+            return None
+
+        if self.__f != -1:
+            return self.__f
+        else:
+            # get it only once:
+            for v, t in self.values:
+                if t == 'fill':
+                    self.__f = v
+                    break
+            else:
+                self.__f = None
+            return self.__f
+
+
 
     def card(self, wrap=False):
         """

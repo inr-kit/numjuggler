@@ -432,8 +432,22 @@ def main():
             sset = set() # surfaces
             mset = set() # material
             tset = set() # transformations
+            uset = set() # universe
+
+            # first run through cards: define filling
             for c in cards:
                 c.get_values()
+                if c.ctype == mp.CID.cell and c.name in cset:
+                    if c.get_f() is not None:
+                        uset.add(c.get_f())
+
+            # next runs: find all other cells:
+            for c in cards:
+                if c.ctype == mp.CID.cell and c.get_u() in uset:
+                    cset.add(c.name)
+
+            # final run: for all cells find surfaces, materials, etc.                    
+            for c in cards:
                 if c.ctype == mp.CID.cell and c.name in cset:
                     # get all surface names and the material, if any.
                     for v, t in c.values:
@@ -443,6 +457,7 @@ def main():
                             mset.add(v)
                         elif t == 'tr':
                             tset.add(v)
+
                 if c.ctype == mp.CID.surface and c.name in sset:
                     # surface card can refer to tr
                     for v, t in c.values:
@@ -453,7 +468,7 @@ def main():
             for c in cards:
                 if c.ctype == mp.CID.title:
                     print c.card(),
-                if blk != mp.CID.cell and c.ctype == mp.CID.cell and c.name in cset:
+                if c.ctype == mp.CID.cell and c.name in cset:
                     print c.card(),
                     blk = c.ctype
                 if c.ctype == mp.CID.surface:
