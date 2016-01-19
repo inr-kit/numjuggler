@@ -1,0 +1,22 @@
+###### renaming
+# default range
+c : 10
+# one-element range
+c 10: +10    
+c 11:  21
+# complete range
+c 30 -- 39 : +100
+c 40 -- 50 :  200
+c 40 -- 50 :        # empty rule
+
+
+####### changing
+# default range
+c : tmp 1e-8
+# one-element range
+c 10: imp:n 5.0 u=0
+c 20: fill=5
+# complete range
+c 40 -- 50: mat 10 den -7.0
+
+
