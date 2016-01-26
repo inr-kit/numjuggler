@@ -102,7 +102,19 @@ extr:
     
     
 nogq:
-    Under development. Replaces GQ cards representing a cylinder with c/x plut tr card."""
+    Replaces GQ cards representing a cylinder with c/x plus tr card. In some
+    cases this improves precision of cylinder's representations and helps to
+    fix lost particle errors.
+    
+    
+count:
+    Returns a list of cells with the number of surfaces used to define cell's
+    geometry.  Two values returned for each cell: total amount of surfaces
+    mentioned in the cell geometry, and the number of unique surfaces (that is
+    equal or less than the former). 
+    
+    Cells with total number of surfaces exceeding 100 (or the value given as 
+    `-s` command line parameter) are denoted in the output with `*`"""
 
 
 dhelp['map'] = """
@@ -256,7 +268,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -521,6 +533,33 @@ def main():
                         ijk = (k,) + v 
                         print tfmt.format(*ijk)
                     trd = {}
+
+        elif args.mode == 'count':
+            # take the maximal sourfaces value from -s:
+            Nmax = int(args.s) 
+            if Nmax == 0:
+                Nmax = 100 # default max value.
+            print ('{:>10s}'*5).format('Cell', 'Line', 'all', 'unique', '>{}'.format(Nmax))
+            for c in cards:
+                if c.ctype == mp.CID.cell:
+                    c.get_values()
+                    # get list of surfaces used in the cell:
+                    los = []
+                    for v, t in c.values:
+                        if 'sur' in t:
+                            los.append(v)
+
+                    # output number of surfaces:
+                    a = len(los)       # number of all surfaces
+                    u = len(set(los))  # number of unique surfaces
+                    print ('{:>10d}'*4).format(c.name, c.pos, a, u),
+                    if a > Nmax:
+                        print ' *'
+                    else:
+                        print ' '
+
+
+
 
 
         elif args.mode == 'renum':

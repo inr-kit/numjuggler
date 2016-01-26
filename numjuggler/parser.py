@@ -664,8 +664,8 @@ def is_blankline(l):
 
 def get_cards(inp, debug=None):
     """
-    Iterable, return (str, Itype), where str is a list of lines representing a
-    card, and Itype is the type of the card (i.e. message, cell, surface or  data)
+    Iterable, return instances of the Card() class representing 
+    cards in the input file.
 
     inp -- is the filename.
     """
