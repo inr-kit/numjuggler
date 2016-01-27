@@ -4,7 +4,6 @@ import argparse as ap
 import os.path
 from numjuggler import numbering as mn
 from numjuggler import parser as mp
-from numjuggler import nogq
 
 
 # help messages already wrapped:
@@ -499,6 +498,18 @@ def main():
                         print c.card(),
         
         elif args.mode == 'nogq':
+            from numjuggler import nogq
+            try:
+                # try because nogq requires numpy.
+                from numjuggler import nogq
+            except ImportError:
+                print "Numpy package is required for --mode nogq but cannot be found. Install it with "
+                print ""
+                print " > pip install numpy"
+                raise
+            except:
+                raise
+
             vfmt = ' {:15.8e}'*3
             tfmt = 'tr{} 0 0 0 ' + ('\n     ' + vfmt)*3
             trd = {} 

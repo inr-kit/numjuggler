@@ -2,8 +2,17 @@
 Functions to convert an arbitrary GQ cylinder into C/X+TR-defined cylinder.
 """
 
-# For a given GQ card print correspondent cx and tr.
-import numpy
+try:
+    # try because numpy might be unavailable.
+    import numpy
+except ImportError:
+    print "Numpy package is required for --mode nogq but cannot be found. Install it with "
+    print ""
+    print " > pip install numpy"
+    print ""
+    raise
+except:
+    raise
 
 def get_k(p):
     # define a2, c and vector k
@@ -31,39 +40,6 @@ def get_k(p):
                      F + E + C - a2))
     k = k / (k**2).sum()**0.5
 
-    # DEFz = (DEF == 0.).sum() # number of zero elements
-    # if DEFz == 3:
-    #     # all D, E and F are zero
-    #     a2 = ABC.max()
-    #     # g = ABC.min() - a2
-    #     g = ABC.sum() - 3.*a2
-    #     k = (ABC == ABC.min()) * 1.
-    # elif DEFz == 2:
-    #     # two of D, E and F are zero
-    #     i = ABC.argmax()
-    #     a2 = ABC[i]
-    #     g = ABC.sum() - 3.*a2
-    #     k = numpy.array((0., 1., DEF[i]))
-    #     k = numpy.roll(k, i)
-    #     k = k / (k**2).sum()**0.5 # normalize
-
-    # else:
-    #     k = numpy.zeros(3)
-    #     # use maximal component of k as the denominator
-    #     i = ABC.argmin() 
-    #     d = numpy.roll(DEF, -1) # denominator
-    #     n = d[i] # nominator
-    #     k[:i] = n/d[:i]
-    #     k[i] = 1.
-    #     k[i+1:] = n/d[i+1:]
-    #     k = k / (k**2).sum()**0.5 # normalize
-
-    #     # get gamma from the largest of DEF:
-    #     i = abs(DEF).argmax()
-    #     g = DEF[i]/numpy.roll(k, -i)[0:2].prod() * 0.5
-
-    #     # get a2 from A+B+C:
-    #     a2 = (ABC.sum() - g)/3.0
     return a2, g, k
 
 def cylinder(p, a2, g, k):
