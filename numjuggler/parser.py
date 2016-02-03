@@ -469,25 +469,80 @@ def _split_cell(input_):
         t = ' '.join(parm).replace('=', ' ').split() # get rid of =.
         while t:
             s = t.pop(0)
-            parsed = False
-            if s.lower() == 'u' or 'fill' in s.lower():
+            if s.lower() == 'u': #  or 'fill' in s.lower():
+                vs = t.pop(0)
+                vv = int(vs)
+                vf = fmt_d(vs)
+
+                vt = 'u'
+                inpt = inpt.replace(vs, tp, 1)
+                vals.append((vv, vt))
+                fmts.append(vf)
+            elif 'fill' in s.lower():
+                # assume that only one integer follows the fill keyword, optionally with transformation in parentheses.
                 # I assume that only one integer follows.
                 vs = t.pop(0)
                 vv = int(vs)
                 vf = fmt_d(vs)
 
-                # TODO fill value can be an array
-                vt = 'fill' if 'fill' in s.lower() else 'u' # this distinguish between fill and u is necessary to put explicit u=0 to cells filled with some other universe.
-                # vt = 'u'
-                parsed = True
-                # warn if there is possibility for an array following the fill keyword:
-                if 'fill' is s.lower() and 'lat' in ''.join(parm).lower():
-                    print "WARNING: fill keyword followed by an array cannot be parsed"
-
-            if parsed:
+                vt = 'fill' # this distinguish between fill and u is necessary to put explicit u=0 to cells filled with some other universe.
                 inpt = inpt.replace(vs, tp, 1)
                 vals.append((vv, vt))
                 fmts.append(vf)
+                # TODO fill value can be followed by transformation in parentheses
+                # Fill value can be optionally followed by transformation number of transformation parameters
+                # in parentheses
+                if t and '(' in t[0]:
+                    vsl = [] # lists of strings, values and formats
+                    vvl = []
+                    vfl = []
+                    vtl = []
+
+                    # add opening parenthesis
+                    vsl.append('(')
+                    vvl.append('(')
+                    vfl.append(fmt_s('('))
+                    vtl.append('#(')  # types starting with '#' are internal types, not to be output in --mode info.
+                    t[0] = t[0].replace('(', '', 1)
+
+                    # add entries in parentheses and the closing parenthis
+                    while vsl[-1] <> ')':
+                        vs = t.pop(0)
+                        if ')' in vs:
+                            vs.replace(')', '', 1)
+                            vsl.append(vs)
+                            vvl.append(vs)
+                            vfl.append(fmt_s(vs))
+                            vtl.append('#tparam')
+                            vsl.append(')')
+                            vvl.append(')')
+                            vfl.append(fmt_s(')'))
+                            vtl.append('#)')
+                        else:
+                            vsl.append(vs)
+                            vvl.append(vs)
+                            vfl.append(fmt_s(vs))
+                            vtl.append('#tparam')
+
+                    # check if only one parameter in parenthethes -- it is tr number, 
+                    # not tr parameter
+                    if len(vsl) == 3:
+                        vvl[1] = int(vvl[1])
+                        vfl[1] = fmt_d(vsl[1])
+                        vtl[1] = 'tr'
+
+                    # add all strings, values, formats and types:
+                    for vs, vv, vf, vt in zip(vsl, vvl, vfl, vtl):
+                        inpt = inpt.replace(vs, tp, 1)
+                        vals.append((vv, vt))
+                        fmts.append(vf)
+
+
+                # warn if there is possibility for an array following the fill keyword:
+                # TODO fill value can be an array
+                if 'fill' is s.lower() and 'lat' in ''.join(parm).lower():
+                    print "WARNING: fill keyword followed by an array cannot be parsed"
+
 
         # replace '_' with fmts:
         for f in fmts:

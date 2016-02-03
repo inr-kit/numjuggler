@@ -113,7 +113,11 @@ count:
     equal or less than the former). 
     
     Cells with total number of surfaces exceeding 100 (or the value given as 
-    `-s` command line parameter) are denoted in the output with `*`"""
+    `-s` command line parameter) are denoted in the output with `*`
+    
+    
+nofill:
+    Under counstruction: Removes all 'fill=' keywords from cell cards."""
 
 
 dhelp['map'] = """
@@ -267,7 +271,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -312,22 +316,23 @@ def main():
             else:
                 types = ['cel', 'sur', 'mat', 'u', 'tal', 'tr']
             for t in types:
-                nset = set(d.get(t, []))
-                print '-'* 40, t, len(nset)
-                rp = None
-                for r1, r2 in mn._get_ranges_from_set(nset):
-                    print '{}{:>3s}'.format(indent, t[0]),
-                    if r1 == r2:
-                        rs = ' {}'.format(r1)
-                    else:
-                        rs = ' {} -- {}'.format(r1, r2)
-                    if rp != None:
-                        fr = '{}'.format(r1 - rp - 1)
-                    else:
-                        fr = ''
-                    ur = '{}'.format(r2 - r1 + 1)
-                    print '{:<30s} {:>8s} {:>8s}'.format(rs, ur, fr)
-                    rp = r2
+                if t[0] <> '#': # for meaning of '#' see parser.
+                    nset = set(d.get(t, []))
+                    print '-'* 40, t, len(nset)
+                    rp = None
+                    for r1, r2 in mn._get_ranges_from_set(nset):
+                        print '{}{:>3s}'.format(indent, t[0]),
+                        if r1 == r2:
+                            rs = ' {}'.format(r1)
+                        else:
+                            rs = ' {} -- {}'.format(r1, r2)
+                        if rp != None:
+                            fr = '{}'.format(r1 - rp - 1)
+                        else:
+                            fr = ''
+                        ur = '{}'.format(r2 - r1 + 1)
+                        print '{:<30s} {:>8s} {:>8s}'.format(rs, ur, fr)
+                        rp = r2
         elif args.mode == 'uexp':
             for c in cards:
                 if c.ctype == mp.CID.cell:
@@ -546,7 +551,7 @@ def main():
                     trd = {}
 
         elif args.mode == 'count':
-            # take the maximal sourfaces value from -s:
+            # take the maximal number of surfaces from -s:
             Nmax = int(args.s) 
             if Nmax == 0:
                 Nmax = 100 # default max value.
@@ -568,6 +573,13 @@ def main():
                         print ' *'
                     else:
                         print ' '
+
+        elif args.mode == 'nofill':
+            # remove all fill= keywords from cell cards. 
+            print ' Mode --mode nofill is not implemented yet.'
+            for c in cards:
+                if c.ctype == mp.CID.cell:
+                    c.get_values()
 
 
 
