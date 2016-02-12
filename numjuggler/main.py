@@ -577,9 +577,21 @@ def main():
         elif args.mode == 'nofill':
             # remove all fill= keywords from cell cards. 
             print ' Mode --mode nofill is not implemented yet.'
+
+            # First loop: find and remove all FILL keywords. Store universes for the second loop.
+            uset = set()
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     c.get_values()
+
+                    for v, t in c.values:
+                        if t == 'fill':
+                            uset.add(v)
+                            c.remove_fill()
+                            break
+                print c.card(), 
+
+            print 'Universes used for FILL:', uset
 
 
 

@@ -17,6 +17,12 @@ fmt_g = lambda s: '{{:<{}g}}'.format(len(s))
 fmt_s = lambda s: '{{:<{}s}}'.fromat(len(s))
 fmt_s = lambda s: '{}'
 
+# If type specifier not given, any data type can be formatted:
+fmt_gen = lambda s: '{{:<{}}}'.format(len(s))
+fmt_d = fmt_gen
+fmt_g = fmt_gen
+fmt_s = fmt_gen
+
 
 class __CIDClass(object):
     """
@@ -122,19 +128,20 @@ class Card(object):
             if 'v' in key:
                 print >> d, '    values:  ', self.values
 
-    def get_input(self):
+    def get_input(self, check_bad_chars=False):
         """
         Recompute template, input and hidden attributes from lines
         """
 
         mline = ''.join(self.lines)
-        bad_chars = '\t'
-        for c in bad_chars:
-            if c in mline:
-                if self.debug:
-                    self.print_debug('get_input: bad character in input cards', '')
-                else:
-                    raise ValueError('Bad character in input file. Run with --debug option.')
+        if check_bad_chars:
+            bad_chars = '\t'
+            for c in bad_chars:
+                if c in mline:
+                    if self.debug:
+                        self.print_debug('get_input: bad character in input cards', '')
+                    else:
+                        raise ValueError('Bad character in input file. Run with --debug option.')
 
         if self.ctype in (CID.comment, CID.blankline):
             # nothing to do for comments or blanklines:
@@ -290,6 +297,44 @@ class Card(object):
                 self.__f = None
             return self.__f
 
+    def remove_fill(self):
+        """
+        Removes the FILL= keyword of a cell card. 
+
+        This method must be called after get_values().
+        """
+        # Fill card is followed by one universe number and optionally by transformation in parentheses. Optionally, 
+        # the `fill` keyword can be prefixed with asterisk
+
+        # Two possibilites are here: (1) start from original line and clean out everything related to FILL,
+        # or (2) modify already existing template, values and input. In both cases, the new card should be checked for
+        # empty lines.
+
+        # Case (2): Modify existing input and values. All content after the FILL keyword is parsed
+        # and thus is given in values, while input provides placefor them. THus, simply replaceing
+        # values with spaces will almost do the job. The remaining part -- the keyword itself that
+        # is presented in input. 
+        vals = []  # new values list.
+        oldv = self.values[:]
+        state = 'before'
+        while oldv:
+            v, t = oldv.pop(0)
+            if state == 'before' and t == 'fill':
+                v = ' '
+                state = 'after u'
+            elif state == 'after_u' and '(' in t:
+                v = ' '
+                state = 'after ('
+            elif state == 'after (':
+                v = ' '
+                if ')' in t:
+                    state = 'after'
+
+            vals.append((v, t))
+                    
+        self.values = vals
+        self.print_debug('remove_fill', 'iv')
+        return
 
 
     def card(self, wrap=False):
@@ -728,6 +773,14 @@ def get_cards(inp, debug=None):
     def _yield(card, ct, ln):
         return Card(card, ct, ln, debug)
 
+    def replace_tab(l, cln):
+        if "\t" in l:
+            print "c Line {}: tab replaced with 4 spaces".format(cln + 1)
+            l = l.replace("\t", " "*4)
+        else:
+            l = l[:]
+        return l
+
     cln = 0 # current line number. Used only for debug
     with open(inp, 'r') as f:
         # define the first block:
@@ -737,19 +790,19 @@ def get_cards(inp, debug=None):
         ncid = 0 # 0 is not used in card ID dictionary CID.
 
         # Parse the 1-st line. It can be message, cell or data block.
-        l = f.next()
+        l = replace_tab(f.next(), cln)
         cln += 1
         kw = l.lower().split()[0]
         if 'message:' == kw:
             # read message block right here
             res = [l]
             while not is_blankline(l):
-                l = f.next()
+                l = replace_tab(f.next(), cln)
                 cln += 1
                 res.append(l)
             yield _yield(res, CID.message, cln-1)  # message card
             yield _yield(l, CID.blankline, cln)      # blank line
-            l = f.next()
+            l = replace_tab(f.next(), cln)
             cln += 1
             ncid = CID.title
         elif 'continue' == kw:
@@ -784,6 +837,7 @@ def get_cards(inp, debug=None):
         card = []  # card is a list of lines.
         cmnt = []  # list of comment lines.
         for l in f:
+            l = replace_tab(l, cln)
             cln += 1
             if is_blankline(l):
                 # blank line delimiter. Stops card even if previous line contains &
