@@ -117,7 +117,11 @@ count:
     
     
 nofill:
-    Under counstruction: Removes all 'fill=' keywords from cell cards."""
+    Under counstruction: Removes all 'fill=' keywords from cell cards.
+    
+    
+matinfo:
+    Output information about how materials are used: for each material list of cells with density and universe."""
 
 
 dhelp['map'] = """
@@ -271,7 +275,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill', 'matinfo'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -594,7 +598,29 @@ def main():
             print 'Universes used for FILL:', uset
 
 
+        elif args.mode == 'matinfo':
+            # for each material used in cell cards, output list of cells together with density and universe.
+            res = {}
+            for c in cards:
+                if c.ctype == mp.CID.cell:
+                    c.get_values()
+                    m = c.get_m()
+                    d = c.get_d()
+                    u = c.get_u()
+                    l = res.get(m, [])
+                    if not l:
+                        res[m] = l
+                    l.append((c.name, d, u))
+                if c.ctype == mp.CID.surface:
+                    break
 
+            # print out information 
+            fmt = ' '*8 + '{:>16}'*3
+            print fmt.format('Cell', 'density', 'universe')
+            for m in sorted(res.keys()):
+                print 'm{} --------------'.format(m)
+                for c, d, u in res[m]:
+                    print fmt.format(c, d, u)
 
 
         elif args.mode == 'renum':

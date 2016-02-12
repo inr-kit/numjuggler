@@ -110,6 +110,8 @@ class Card(object):
         # some properties defined on demand
         self.__u = -1 # -1 means undefined. None -- not specified in input 
         self.__f = -1 # fill
+        self.__m = -1 # material
+        self.__d = '' # density
 
         # Split card to template and meaningful part is always needed. Other operations
         # are optional.
@@ -186,7 +188,8 @@ class Card(object):
 
     def _protect_nums(self):
         """
-        In the meaningful part of the card replace numbers that do not represent cell, surface or a cell parameter with some unused char.
+        In the meaningful part of the card replace numbers that do not
+        represent cell, surface or a cell parameter with some unused char. 
         """
 
         inpt = '\n'.join(self.input)
@@ -277,6 +280,39 @@ class Card(object):
             else:
                 self.__u = None
             return self.__u
+    def get_m(self):
+        """
+        For cell card return material number
+        """
+        if self.ctype != CID.cell:
+            return None
+
+        if self.__m != -1:
+            return self.__m
+        else:
+            for v, t in self.values:
+                if t == 'mat':
+                    self.__m = v
+                    break
+            else:
+                raise ValueError("Cell does not have material specs")
+            return self.__m
+
+    def get_d(self):
+        """
+        For cell card return density
+        """
+        if self.__d != '':
+            return self.__d
+
+        if self.get_m() == 0:
+            self.__d = 0
+            return self.__d
+        else:
+            # density entry is hidden in the input and available as the 1-st entry in self.hidden dictionary.
+            self.__d = float(self.hidden['~'][0])
+            return self.__d
+            
 
     def get_f(self):
         """

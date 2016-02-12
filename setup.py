@@ -8,7 +8,7 @@ setup(name='numjuggler',
       #    Y -- minor version. New minor version, when new function(s) added.
       #
       #    Z -- update, new update number when a bug is fixed.
-      version='2.14a.10',
+      version='2.15a.10',
       description='MCNP input file renumbering tool',
       author='A.Travleev',
       author_email='anton.travleev@kit.edu',
