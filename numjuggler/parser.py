@@ -392,7 +392,10 @@ class Card(object):
             inpt = inpt.split('\n')
 
             if wrap:
-                tparts = self.template.split('{}')[1:]
+                tparts = self.template.split('{}')[1:] # TODO: template format has explict length, therefore will not match '{}'.
+                tparts = re.split('\{.*?\}', self.template)[1:]
+                # print 'wrapped inp', repr(self.template)
+                # print 'wrapped spl', repr(tparts)
                 newt = [''] # new template parts
                 newi = [] # new input parts
                 self.print_debug('card wrap=True', '')
