@@ -8,9 +8,9 @@ import warnings
 # regular expressions
 re_int = re.compile('\D{0,1}\d+') # integer with one prefix character
 re_ind = re.compile('\[.+\]')     # interior of square brackets for tally in lattices
-re_rpt = re.compile('\d+[rRiI]')  # repitition syntax of MCNP input file
+re_rpt = re.compile('\d+[ri]', flags=re.IGNORECASE)  # repitition syntax of MCNP input file
 re_prm = re.compile('((imp:n|imp:p|tmp)\s+\S+)')     # imp or tmp parameters in cell card
-re_prm = re.compile('[it]mp:*[npe]*[=\s]+\S+')
+re_prm = re.compile('[it]mp:*[npe]*[=\s]+\S+', flags=re.IGNORECASE)
 
 fmt_d = lambda s: '{{:<{}d}}'.format(len(s))
 fmt_g = lambda s: '{{:<{}g}}'.format(len(s))
@@ -211,7 +211,9 @@ class Card(object):
                 d['~'].append(rho)
 
             # imp and tmp parameters:
+            # print 're_prm: inp', repr(inpt)
             for s in re_prm.findall(inpt):
+                # print 're_prm: fnd', repr(s)
                 d['~'].append(s)
                 inpt = inpt.replace(s, '~', 1)
 
@@ -501,7 +503,7 @@ def _split_cell(input_):
     tp = '_'  # temporary placeholder for format specifiers
     if 'like ' in inpt.lower():
         # raise NotImplementedError()
-        warnings.warn('Parser for "like but" card, found on line {}, is not implemented'.format(self.pos))
+        warnings.warn('Parser for "like but" card, found on line {}, is not implemented'.format(self.pos)) # TODO: self.pos here is undefined.
     else:
         # cell card has usual format.
 
@@ -535,15 +537,35 @@ def _split_cell(input_):
             else:
                 geom.append(e)
 
+        # print '_split_cell geom', geom, parm
         # replace integer entries in geom block:
         for s in re_int.findall(' '.join(geom)):
+            # print 's from re_int', repr(s)
             # s is a surface or a cell (later only if prefixed by #)
             t = 'cel' if s[0] == '#' else 'sur'
             s = s if s[0].isdigit() else s[1:]
             f = fmt_d(s)
             inpt = inpt.replace(s, tp, 1)
+            # print 't', repr(t)
+            # print 's', repr(s)
+            # print 'f', repr(f)
+            # print repr(inpt)
             vals.append((int(s), t))
             fmts.append(f)
+
+        # At this point all geom entries are replaced in inpt. THe rest should work only
+        # with the parm part of inpt. To endure this, inpt is splitted into inpt_geom and inpt_parm:
+        if parm:
+            i = inpt.index(parm[0])
+        else:
+            i = len(inpt)
+        inpt_geom = inpt[:i]
+        inpt_parm = inpt[i:]
+
+        # print 'i', i
+        # print 'inpt', repr(inpt)
+        # print 'in_g', repr(inpt_geom)
+        # print 'in_p', repr(inpt_parm)
 
         # replace values in parameters block. Values are prefixed with = or space(s)
         # Note that tmp and imp values must be hidden
@@ -556,18 +578,17 @@ def _split_cell(input_):
                 vf = fmt_d(vs)
 
                 vt = 'u'
-                inpt = inpt.replace(vs, tp, 1)
+                inpt_parm = inpt_parm.replace(vs, tp, 1)
                 vals.append((vv, vt))
                 fmts.append(vf)
             elif 'fill' in s.lower():
                 # assume that only one integer follows the fill keyword, optionally with transformation in parentheses.
-                # I assume that only one integer follows.
                 vs = t.pop(0)
                 vv = int(vs)
                 vf = fmt_d(vs)
 
                 vt = 'fill' # this distinguish between fill and u is necessary to put explicit u=0 to cells filled with some other universe.
-                inpt = inpt.replace(vs, tp, 1)
+                inpt_parm = inpt_parm.replace(vs, tp, 1)
                 vals.append((vv, vt))
                 fmts.append(vf)
                 # TODO fill value can be followed by transformation in parentheses
@@ -614,7 +635,7 @@ def _split_cell(input_):
 
                     # add all strings, values, formats and types:
                     for vs, vv, vf, vt in zip(vsl, vvl, vfl, vtl):
-                        inpt = inpt.replace(vs, tp, 1)
+                        inpt_parm = inpt_parm.replace(vs, tp, 1) # TODO: here only parm part of inpt should be modified.
                         vals.append((vv, vt))
                         fmts.append(vf)
 
@@ -624,6 +645,7 @@ def _split_cell(input_):
                 if 'fill' is s.lower() and 'lat' in ''.join(parm).lower():
                     print "WARNING: fill keyword followed by an array cannot be parsed"
 
+        inpt = inpt_geom + inpt_parm
 
         # replace '_' with fmts:
         for f in fmts:
