@@ -614,7 +614,7 @@ def _split_cell(input_):
                     while vsl[-1] <> ')':
                         vs = t.pop(0)
                         if ')' in vs:
-                            vs.replace(')', '', 1)
+                            vs = vs.replace(')', '', 1)
                             vsl.append(vs)
                             vvl.append(vs)
                             vfl.append(fmt_s(vs))
@@ -632,6 +632,7 @@ def _split_cell(input_):
                     # check if only one parameter in parenthethes -- it is tr number, 
                     # not tr parameter
                     if len(vsl) == 3:
+                        print '_split_cell, len(vsl)==3', vvl
                         vvl[1] = int(vvl[1])
                         vfl[1] = fmt_d(vsl[1])
                         vtl[1] = 'tr'
