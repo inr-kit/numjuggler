@@ -104,6 +104,8 @@ nogq:
     Replaces GQ cards representing a cylinder with c/x plus tr card. In some
     cases this improves precision of cylinder's representations and helps to
     fix lost particle errors.
+
+    Transformation card numbering starts from number specified in -c argument.
     
     
 count:
@@ -118,10 +120,18 @@ count:
     
 nofill:
     Under counstruction: Removes all 'fill=' keywords from cell cards.
+
+fillempty:
+    Add to all void non-filled cells ``FILL = N``, where N is specified in
+    the ``-u`` argument.
     
     
 matinfo:
-    Output information about how materials are used: for each material list of cells with density and universe."""
+    Output information about how materials are used: for each material list of cells with density and universe.
+    
+    
+uinfo:
+    For each universe defined in the input file, return a list of cells in this universe."""
 
 
 dhelp['map'] = """
@@ -275,7 +285,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill', 'matinfo'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill', 'matinfo', 'uinfo', 'fillempty'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -519,6 +529,8 @@ def main():
             except:
                 raise
 
+            trn0 = int(args.c)
+
             vfmt = ' {:15.8e}'*3
             tfmt = 'tr{} 0 0 0 ' + ('\n     ' + vfmt)*3
             trd = {} 
@@ -545,12 +557,12 @@ def main():
                                 trd[trn] = tr
                             # replace surface card
                             crd = 'c ' + '\nc '.join(c.card().splitlines())
-                            crd += '\n{} {} c/z {:15.8e} 0 {:15.8e}\n'.format(c.name, trn, x0, R)
+                            crd += '\n{} {} c/z {:15.8e} 0 {:15.8e}\n'.format(c.name, trn + trn0, x0, R)
                 print crd,
                 if trd and c.ctype == mp.CID.blankline:
                     # this is blankline after surfaces. Put tr cards here
                     for k, v in sorted(trd.items()):
-                        ijk = (k,) + v 
+                        ijk = (k + trn0,) + v 
                         print tfmt.format(*ijk)
                     trd = {}
 
@@ -622,6 +634,40 @@ def main():
                 for c, d, u in res[m]:
                     print fmt.format(c, d, u)
 
+        elif args.mode == 'uinfo':
+            # for each universe return list of its cells.
+            res = {}
+            for c in cards:
+                if c.ctype == mp.CID.cell:
+                    c.get_values()
+                    u = c.get_u()
+                    u = 0 if u is None else u
+                    l = res.get(u, [])
+                    if not l:
+                        res[u] = l
+                    l.append(c.name)
+                elif c.ctype == mp.CID.surface:
+                    break
+            # print out 
+            from numjuggler import ri_notation as rin
+            for u, l in sorted(res.items()):
+                print 'u' + str(u), 
+                for e in rin.shorten(l):
+                    print e,
+                print
+
+        elif args.mode == 'fillempty':
+            # add 'FILL =' to all void non-filled cells.
+            N = ' fill={} '.format(int(args.u))
+            M = int(args.m)
+            for c in cards:
+                if c.ctype == mp.CID.cell:
+                    c.get_values()
+                    m = c.get_m()
+                    f = c.get_f()
+                    if m == M and f in [0, None]:
+                        c.input[-1] += N 
+                print c.card(),
 
         elif args.mode == 'renum':
             for c in cards:
