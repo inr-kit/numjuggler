@@ -534,7 +534,7 @@ def _split_cell(input_):
         parm = []
         while t:
             e = t.pop(0)
-            if e[0].isalpha():
+            if e[0].isalpha() or e[0] == '*':
                 parm = [e] + t
                 break
             else:
@@ -575,22 +575,22 @@ def _split_cell(input_):
         t = ' '.join(parm).replace('=', ' ').split() # get rid of =.
         while t:
             s = t.pop(0)
+            # print '_split_cell s: ', repr(s)
             if s.lower() == 'u': #  or 'fill' in s.lower():
                 vs = t.pop(0)
                 vv = int(vs)
                 vf = fmt_d(vs)
-
                 vt = 'u'
                 inpt_parm = inpt_parm.replace(vs, tp, 1)
                 vals.append((vv, vt))
                 fmts.append(vf)
             elif 'fill' in s.lower():
+                # print '_split_cell: has fill!'
                 # assume that only one integer follows the fill keyword, optionally with transformation in parentheses.
                 vs = t.pop(0)
                 vv = int(vs)
                 vf = fmt_d(vs)
-
-                vt = 'fill' # this distinguish between fill and u is necessary to put explicit u=0 to cells filled with some other universe.
+                vt = 'fill' 
                 inpt_parm = inpt_parm.replace(vs, tp, 1)
                 vals.append((vv, vt))
                 fmts.append(vf)
@@ -598,7 +598,7 @@ def _split_cell(input_):
                 # Fill value can be optionally followed by transformation number of transformation parameters
                 # in parentheses
                 if t and '(' in t[0]:
-                    vsl = [] # lists of strings, values and formats
+                    vsl = [] # lists of strings, values, formats and types
                     vvl = []
                     vfl = []
                     vtl = []
@@ -615,15 +615,16 @@ def _split_cell(input_):
                         vs = t.pop(0)
                         if ')' in vs:
                             vs = vs.replace(')', '', 1)
-                            vsl.append(vs)
-                            vvl.append(vs)
-                            vfl.append(fmt_s(vs))
-                            vtl.append('#tparam')
+                            if vs:
+                                vsl.append(vs)
+                                vvl.append(vs)
+                                vfl.append(fmt_s(vs))
+                                vtl.append('#tparam')
                             vsl.append(')')
                             vvl.append(')')
                             vfl.append(fmt_s(')'))
                             vtl.append('#)')
-                        else:
+                        elif vs:
                             vsl.append(vs)
                             vvl.append(vs)
                             vfl.append(fmt_s(vs))
