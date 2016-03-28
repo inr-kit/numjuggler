@@ -122,8 +122,10 @@ nofill:
     Under counstruction: Removes all 'fill=' keywords from cell cards.
 
 fillempty:
-    Add to all void non-filled cells ``FILL = N``, where N is specified in
-    the ``-u`` argument.
+    Add to all void non-filled cells with importance > 0 ``FILL = N``, where N
+    is specified in the ``-u`` argument. When a material name is given with the
+    -m argument, cells filled with this material are filled with N, instead of
+    void cells.
     
     
 matinfo:
@@ -665,7 +667,8 @@ def main():
                     c.get_values()
                     m = c.get_m()
                     f = c.get_f()
-                    if m == M and f in [0, None]:
+                    imp = c.get_imp()
+                    if imp > 0 and m == M and f in [0, None]:
                         c.input[-1] += N 
                 print c.card(),
 

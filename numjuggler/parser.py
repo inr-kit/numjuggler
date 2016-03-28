@@ -112,6 +112,7 @@ class Card(object):
         self.__f = -1 # fill
         self.__m = -1 # material
         self.__d = '' # density
+        self.__i = -1 # importances
 
         # Split card to template and meaningful part is always needed. Other operations
         # are optional.
@@ -334,6 +335,28 @@ class Card(object):
             else:
                 self.__f = None
             return self.__f
+
+    def get_imp(self):
+        """
+        Returns importances, if explicitly specified in the cell card.
+        """
+        if self.ctype != CID.cell:
+            return None
+
+        if self.__i != -1:
+            return self.__i
+        else:
+            for p in 'npe':
+                key = 'imp:' + p
+                for s in self.hidden.get('~', []):
+                    sl = s.lower()
+                    if key in sl:
+                        val = float(sl.replace(key, '').replace('=', ''))
+                        self.__i = val
+                        return self.__i
+            self.__i = 1
+            return self.__i
+
 
     def remove_fill(self):
         """
