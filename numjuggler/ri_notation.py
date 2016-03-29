@@ -55,6 +55,7 @@ def expand(list_):
     es = None
     for e in list_:
         if es != None:
+            e = float(e)
             d = (e - es) / (n+1)
             for i in range(1, n+2):
                 yield es + d*i
@@ -68,8 +69,8 @@ def expand(list_):
             n = int(e[:-1])
             es = ep
         else:
-            yield e
-            ep = e
+            ep = float(e)
+            yield ep
 
 
 

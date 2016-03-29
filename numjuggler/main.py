@@ -460,6 +460,16 @@ def main():
         elif args.mode == 'extr':
             # extract cell specified in -c keyword and necessary materials, and surfaces.
             cset = set(map(int, args.c.split()))
+            if args.map != '':
+                cset = set()
+                for l in open(args.map, 'r'):
+                    for c in l.split():
+                        cset.add(int(c))
+                # print 'Cells to extract'
+                # for c in sorted(cset):
+                #     print c
+                # print 'Cells to extract'
+
             # first, get all surfaces needed to represent the cn cell.
             sset = set() # surfaces
             mset = set() # material
@@ -653,23 +663,32 @@ def main():
             # print out 
             from numjuggler import ri_notation as rin
             for u, l in sorted(res.items()):
-                print 'u' + str(u), 
+                print 'u{}'.format(u),
                 for e in rin.shorten(l):
                     print e,
                 print
 
         elif args.mode == 'fillempty':
             # add 'FILL =' to all void non-filled cells.
-            N = ' fill={} '.format(int(args.u))
+            N = ' fill={} '.format(args.u)
             M = int(args.m)
+            cl = []
+            if args.map != '':
+                # read from map list of cells where to insert the fill card
+                for l in open(args.map):
+                    cl += map(int, l.split())
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     c.get_values()
-                    m = c.get_m()
-                    f = c.get_f()
-                    imp = c.get_imp()
-                    if imp > 0 and m == M and f in [0, None]:
-                        c.input[-1] += N 
+                    if cl:
+                        if c.name in cl:
+                            c.input[-1] += N
+                    else:                        
+                        m = c.get_m()
+                        f = c.get_f()
+                        imp = c.get_imp()
+                        if imp > 0 and m == M and f in [0, None]:
+                            c.input[-1] += N 
                 print c.card(),
 
         elif args.mode == 'renum':
