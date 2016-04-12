@@ -4,6 +4,7 @@ import argparse as ap
 import os.path
 from numjuggler import numbering as mn
 from numjuggler import parser as mp
+from numjuggler import ri_notation as rin
 
 
 # help messages already wrapped:
@@ -133,7 +134,33 @@ matinfo:
     
     
 uinfo:
-    For each universe defined in the input file, return a list of cells in this universe."""
+    For each universe defined in the input file, return a list of cells in this universe.
+
+
+impinfo:
+    List all cells with zero importances.
+    
+    
+sinfo:
+    For each surface defined in the input file, return the list of cells where it is used.
+    
+vsource:
+    Output data cards describing source for computation of volumes. Model dimensions must be specified in the -c option 
+    as a rcc that circumscribes the model. For example, 
+
+    --mode vsource -c "10 20 -10 10 -20 20"
+
+    will generate planar sources for the box 10 < x < 20, -10 < y < 10, -20 < z < 20.
+
+    --mode vsource -s 100 
+
+    will generate spherical source for the sphere 100.
+
+    --mode vsource -s "10 11 12 13 14 15"
+
+    will generate planar source based on parameters of planes 10 -- 15 (these surfaces must be px, py and pz planes).
+
+"""
 
 
 dhelp['map'] = """
@@ -287,7 +314,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill', 'matinfo', 'uinfo', 'fillempty'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill', 'matinfo', 'uinfo', 'impinfo', 'fillempty', 'sinfo', 'vsource'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -428,7 +455,7 @@ def main():
                 c.get_values()
                 if c.ctype == mp.CID.surface:
                     # compare this surface with all previous and if unique, add to dict
-                    print '--surface', c.card(),
+                    # print '--surface', c.card(),
                     ust = us.get(c.stype, {})
                     if ust == {}:
                         us[c.stype] = ust
@@ -436,13 +463,16 @@ def main():
                         if s.stype == c.stype:
                             # current surface card and s have the same type. Compare coefficients:
                             if mp.are_close_lists(s.scoefs, c.scoefs, pci=pcl.get(c.stype, [])):
-                                print 'is close to {}'.format(sn)
+                                print c.card(comment=False)
+                                print s.card(comment=False)
+                                print 
+                                # print 'is close to {}'.format(sn)
                                 break
                     else:
                         # add c to us:
                         cn = c.values[0][0]  # surface name
                         ust[cn] = c
-                        print 'is unique'
+                        # print 'is unique'
 
         elif args.mode == 'msimp':
             # simplify material cards
@@ -459,7 +489,11 @@ def main():
 
         elif args.mode == 'extr':
             # extract cell specified in -c keyword and necessary materials, and surfaces.
-            cset = set(map(int, args.c.split()))
+            cset = set()
+            if args.c != '0':
+                le = rin.expand(args.c.split())
+                cset = set(le)
+                # cset = set(map(int, args.c.split()))
             if args.map != '':
                 cset = set()
                 for l in open(args.map, 'r'):
@@ -469,7 +503,9 @@ def main():
                 # for c in sorted(cset):
                 #     print c
                 # print 'Cells to extract'
-
+            if not cset:
+                print "No cells to extract are specified"
+                raise Exception
             # first, get all surfaces needed to represent the cn cell.
             sset = set() # surfaces
             mset = set() # material
@@ -661,12 +697,118 @@ def main():
                 elif c.ctype == mp.CID.surface:
                     break
             # print out 
-            from numjuggler import ri_notation as rin
             for u, l in sorted(res.items()):
                 print 'u{}'.format(u),
                 for e in rin.shorten(l):
                     print e,
                 print
+
+        elif args.mode == 'impinfo':
+            for c in cards:
+                if c.ctype == mp.CID.cell:
+                    c.get_values()
+                    i = c.get_imp()
+                    if i in [None, 0]:
+                        print c.card(),
+
+        elif args.mode == 'sinfo':
+            # first, get the list of surfaces:
+            sl = {}
+            for c in cards:
+                if c.ctype == mp.CID.surface:
+                    c.get_values()
+                    sl[c.name] = set() 
+            # for each surface return list of cells:
+            for c in cards:
+                if c.ctype == mp.CID.cell:
+                    c.get_values()
+                    for v, t in c.values:
+                        if t == 'sur':
+                            sl[v].add(c.name)
+            # print out:
+            for s, cs in sorted(sl.items()):
+                print s, sorted(cs)
+
+        
+        elif args.mode == 'vsource':
+
+            def print_planar(params, d=1e-5):
+                x1, x2, y1, y2, z1, z2 = params[:]
+                fmt = 'c sdef x {:12} y {:12} z {:12} vec {} dir 1 wgt {}'
+                print fmt.format(x1 + d, 'd2', 'd3', '1 0 0', (z2-z1)*(y2-y1))
+                print fmt.format('d1', y1 + d, 'd3', '0 1 0', (z2-z1)*(x2-x1))
+                print fmt.format('d1', 'd2', z1 + d, '0 0 1', (y2-y1)*(x2-x1))
+                fm2 = 'si{:1} h {:12} {:12} $ {}'
+                print fm2.format(1, x1 + d, x2 - d, x2-x1)
+                print fm2.format(2, y1 + d, y2 - d, y2-y1)
+                print fm2.format(3, z1 + d, z2 - d, z2-z1)
+                fm3 = 'sp{:1} d 0 1'
+                print fm3.format(1)
+                print fm3.format(2)
+                print fm3.format(3)
+
+            def print_spherical(params, d=1e-5):
+                print 'Not implemented yet'
+
+            if args.c != '0':
+                print 'c source from -c parameters'
+                vals = map(float, args.c.split())
+                if len(vals) == 1:
+                    # radius of a sphere on the origin
+                    print_spherical([0, 0, 0, vals[0]])
+                elif len(vals) == 4:
+                    # sphere coordinates and radius:
+                    print_spherical(vals)
+                elif len(vals) == 6:
+                    # x, y and z range of a box:
+                    print_planar(vals)
+                else:
+                    raise ValueError('Wrong number of entries in the -c option')
+
+            if args.s != '0':
+                print 'c source from -s parameters'
+                nset = set(map(int, args.s.split()))
+                sset = {}
+                for c in cards:
+                    if c.ctype == mp.CID.surface:
+                        c.get_values()
+                        if c.name in nset:
+                            sset[c.name] = c
+                    elif c.ctype == mp.CID.data:
+                        break
+
+                if len(sset) == 1:
+                    # -s interpreted as a sphere surface.
+                    n, c = sset.items()[0]
+                    if c.stype == 'so':
+                        r = c.scoefs[0]
+                        x = 0
+                        y = 0
+                        z = 0
+                    elif c.stype == 's':
+                        x, y, z, r = c.scoefs
+                    else:
+                        raise ValueError('Surface {} not a sphere'.format(n))
+                    print_spherical([x, y, z, r])
+
+                elif len(sset) == 6:
+                    # -s is interpreted as a list of px, py and pz planes.
+                    x = []
+                    y = []
+                    z = []
+                    for n, c in sset.items():
+                        if c.stype == 'px':
+                            x.append(c.scoefs[0])
+                        elif c.stype == 'py':
+                            y.append(c.scoefs[0])
+                        elif c.stype == 'pz':
+                            z.append(c.scoefs[0])
+                        else:
+                            raise ValueError('Surface {} not a px, py or pz plane'.format(n))
+                    print_planar(sorted(x) + sorted(y) + sorted(z))
+                else:
+                    raise ValueError('Wront number of surfaces in -s option')
+
 
         elif args.mode == 'fillempty':
             # add 'FILL =' to all void non-filled cells.

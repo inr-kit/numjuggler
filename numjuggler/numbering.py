@@ -187,6 +187,7 @@ def read_map_file(fname):
     td = {'c': 'cel',
           's': 'sur',
           'u': 'u',
+          't': 'tr',
           'm': 'mat'}
 
     d = {}

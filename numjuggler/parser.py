@@ -108,11 +108,14 @@ class Card(object):
         self.values = []
 
         # some properties defined on demand
+        ## cell properties
         self.__u = -1 # -1 means undefined. None -- not specified in input 
         self.__f = -1 # fill
         self.__m = -1 # material
         self.__d = '' # density
         self.__i = -1 # importances
+        ## surface properties
+        self.__st = '' # '' means undefined.
 
         # Split card to template and meaningful part is always needed. Other operations
         # are optional.
@@ -358,6 +361,8 @@ class Card(object):
             return self.__i
 
 
+
+
     def remove_fill(self):
         """
         Removes the FILL= keyword of a cell card. 
@@ -398,7 +403,7 @@ class Card(object):
         return
 
 
-    def card(self, wrap=False):
+    def card(self, wrap=False, comment=True):
         """
         Return multi-line string representing the card.
         """
@@ -412,7 +417,11 @@ class Card(object):
             for k, vl in self.hidden.items():
                 for v in vl:
                     inpt = inpt.replace(k, v, 1)
+
             inpt = inpt.split('\n')
+            if not comment:
+                return ' '.join(inpt)
+
 
             if wrap:
                 tparts = self.template.split('{}')[1:] # TODO: template format has explict length, therefore will not match '{}'.
@@ -462,6 +471,7 @@ class Card(object):
         else:
             card = self.template
         return card
+
 
 
     def remove_spaces(self):
@@ -964,7 +974,7 @@ def get_cards(inp, debug=None):
             yield _yield(cmnt, CID.comment, cln - len(cmnt))
 
 
-def are_close_lists(x, y, re=1e-4, pci=[]):
+def are_close_lists(x, y, re=1e-6, pci=[]):
     """
     Return True if x and y are close.
     """
@@ -1016,7 +1026,7 @@ def are_close_lists(x, y, re=1e-4, pci=[]):
                 elif xx != 0:
                     r = abs((xx - yy)/xx) <= re
                 else:
-                    r = abs((xx - yy)/xx) <= re
+                    r = abs((xx - yy)/yy) <= re
                 if not r:
                     m = 'diff at {}'.format(n)
                     break
@@ -1032,13 +1042,13 @@ def are_close_lists(x, y, re=1e-4, pci=[]):
 
     else:
         result = True
-    print 'are_equal', x, y, re, pci
-    for xl, yl, r, m in zip([xe, xp], [ye, yp], res, msg):
-        print ' '*5, m, r, ':'
-        print ' '*15, xl
-        print ' '*15, yl
-        if r:
-            break
+    # print 'are_equal', x, y, re, pci
+    # for xl, yl, r, m in zip([xe, xp], [ye, yp], res, msg):
+    #     print ' '*5, m, r, ':'
+    #     print ' '*15, xl
+    #     print ' '*15, yl
+    #     if r:
+    #         break
     return result
 
 
