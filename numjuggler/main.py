@@ -362,6 +362,7 @@ def main():
                 if t[0] <> '#': # for meaning of '#' see parser.
                     nset = set(d.get(t, []))
                     print '-'* 40, t, len(nset)
+                    print '-'* 20, t, ' list', ' '.join(map(str, rin.shorten(sorted(nset))))
                     rp = None
                     for r1, r2 in mn._get_ranges_from_set(nset):
                         print '{}{:>3s}'.format(indent, t[0]),
@@ -708,7 +709,7 @@ def main():
                 if c.ctype == mp.CID.cell:
                     c.get_values()
                     i = c.get_imp()
-                    if i in [None, 0]:
+                    if 0 in i.values():
                         print c.card(),
 
         elif args.mode == 'sinfo':
@@ -829,7 +830,7 @@ def main():
                         m = c.get_m()
                         f = c.get_f()
                         imp = c.get_imp()
-                        if imp > 0 and m == M and f in [0, None]:
+                        if imp['imp:n'] > 0 and m == M and f in [0, None]:
                             c.input[-1] += N 
                 print c.card(),
 

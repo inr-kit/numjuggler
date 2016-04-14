@@ -349,15 +349,17 @@ class Card(object):
         if self.__i != -1:
             return self.__i
         else:
+            res = {}
             for p in 'npe':
                 key = 'imp:' + p
                 for s in self.hidden.get('~', []):
                     sl = s.lower()
                     if key in sl:
                         val = float(sl.replace(key, '').replace('=', ''))
-                        self.__i = val
-                        return self.__i
-            self.__i = 1
+                        res[key] = val
+            if not res:
+                res['imp:n'] = 1
+            self.__i = res
             return self.__i
 
 
