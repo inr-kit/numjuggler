@@ -127,6 +127,9 @@ fillempty:
     is specified in the ``-u`` argument. When a material name is given with the
     -m argument, cells filled with this material are filled with N, instead of
     void cells.
+
+    When a file is given with the --map option, a list of cells is read from this file,
+    and the "fill=" is added to these cells only, independent on cell's importance or material.
     
     
 matinfo:
@@ -159,6 +162,11 @@ vsource:
     --mode vsource -s "10 11 12 13 14 15"
 
     will generate planar source based on parameters of planes 10 -- 15 (these surfaces must be px, py and pz planes).
+
+
+tallies:    
+    Output tally cards for calculation of volumes in all cells. Tally number can be given with the -s option, and with non-zero -u
+    one can specify cells of particular universe.
 
 """
 
@@ -314,7 +322,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill', 'matinfo', 'uinfo', 'impinfo', 'fillempty', 'sinfo', 'vsource'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill', 'matinfo', 'uinfo', 'impinfo', 'fillempty', 'sinfo', 'vsource', 'tallies'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -377,6 +385,27 @@ def main():
                         ur = '{}'.format(r2 - r1 + 1)
                         print '{:<30s} {:>8s} {:>8s}'.format(rs, ur, fr)
                         rp = r2
+        elif args.mode == 'tallies':
+            # generate tally cards for volume in each cell
+            n = int(args.s) # as tally number
+            u = args.u # specify cells of particular universe only
+            if args.m != '0':
+                fmt = args.m
+            else:
+                fmt = '{}'
+            cset = set()
+            for c in cards:
+                c.get_values()
+                if c.ctype == mp.CID.cell:
+                    cu = c.get_u()
+                    if u == '_' or cu == int(u) or (cu == None and int(u) == 0):
+                        cset.add(c.name)
+                elif c.ctype ==  mp.CID.surface:
+                    break
+            print 'f{}:n {}'.format(n, fmt.format(' '.join(map(str, rin.shorten(sorted(cset))))))
+            print 'sd{} 1 {}r'.format(n, len(cset)-1)
+
+
         elif args.mode == 'uexp':
             for c in cards:
                 if c.ctype == mp.CID.cell:
@@ -733,12 +762,21 @@ def main():
         
         elif args.mode == 'vsource':
 
-            def print_planar(params, d=1e-5):
+            def print_planar(params, d=1e-5, u='0'):
+
+                # u defines which sdef is printed:
+                c = ['c x', 'c y', 'c z']
+                if u in 'xX':
+                    c[0] = ''
+                elif u in 'yY':
+                    c[1] = ''
+                elif u in 'zZ':
+                    c[2] = ''
                 x1, x2, y1, y2, z1, z2 = params[:]
-                fmt = 'c sdef x {:12} y {:12} z {:12} vec {} dir 1 wgt {}'
-                print fmt.format(x1 + d, 'd2', 'd3', '1 0 0', (z2-z1)*(y2-y1))
-                print fmt.format('d1', y1 + d, 'd3', '0 1 0', (z2-z1)*(x2-x1))
-                print fmt.format('d1', 'd2', z1 + d, '0 0 1', (y2-y1)*(x2-x1))
+                fmt = 'sdef x {:12} y {:12} z {:12} vec {} dir 1 wgt {}'
+                print c[0], fmt.format(x1 + d, 'd2', 'd3', '1 0 0', (z2-z1)*(y2-y1))
+                print c[1], fmt.format('d1', y1 + d, 'd3', '0 1 0', (z2-z1)*(x2-x1))
+                print c[2], fmt.format('d1', 'd2', z1 + d, '0 0 1', (y2-y1)*(x2-x1))
                 fm2 = 'si{:1} h {:12} {:12} $ {}'
                 print fm2.format(1, x1 + d, x2 - d, x2-x1)
                 print fm2.format(2, y1 + d, y2 - d, y2-y1)
@@ -762,7 +800,7 @@ def main():
                     print_spherical(vals)
                 elif len(vals) == 6:
                     # x, y and z range of a box:
-                    print_planar(vals)
+                    print_planar(vals, u=args.u)
                 else:
                     raise ValueError('Wrong number of entries in the -c option')
 
@@ -806,7 +844,7 @@ def main():
                             z.append(c.scoefs[0])
                         else:
                             raise ValueError('Surface {} not a px, py or pz plane'.format(n))
-                    print_planar(sorted(x) + sorted(y) + sorted(z))
+                    print_planar(sorted(x) + sorted(y) + sorted(z), u=args.u)
                 else:
                     raise ValueError('Wront number of surfaces in -s option')
 
@@ -819,7 +857,11 @@ def main():
             if args.map != '':
                 # read from map list of cells where to insert the fill card
                 for l in open(args.map):
-                    cl += map(int, l.split())
+                    cl += l.split()
+            if args.c != '0':
+                cl += args.c.split()
+            cl = set(rin.expand(cl))
+            print 'cl:', cl
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     c.get_values()

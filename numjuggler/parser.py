@@ -541,7 +541,9 @@ def _split_cell(input_):
     tp = '_'  # temporary placeholder for format specifiers
     if 'like ' in inpt.lower():
         # raise NotImplementedError()
-        warnings.warn('Parser for "like but" card, found on line {}, is not implemented'.format(self.pos)) # TODO: self.pos here is undefined.
+        # warnings.warn('Parser for "like but" card, found on line {}, is not implemented'.format(self.pos)) # TODO: self.pos here is undefined.
+        warnings.warn('Parser for "like but" card is not implemented')
+        return inpt.split('\n'), vals
     else:
         # cell card has usual format.
 
