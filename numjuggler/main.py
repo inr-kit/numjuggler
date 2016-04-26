@@ -62,6 +62,9 @@ uexp:
     have explicit zero universes, they can be renumbered using the -u or --map
     option in subsequent runs.  
 
+    Another universe can be specified with the -u option. IN this case, the whole option should 
+    be specified, i.e. -u ' u=1 '
+
 split: 
     Split input into several files containing separate blocks. Output is written
     to files
@@ -131,6 +134,9 @@ fillempty:
     When a file is given with the --map option, a list of cells is read from this file,
     and the "fill=" is added to these cells only, independent on cell's importance or material.
     
+    UPD: the content of -u option is copied into the input file as is. For example, to specify
+    transformation in-place: -u '*fill=1 (0 0 5)'.
+
     
 matinfo:
     Output information about how materials are used: for each material list of cells with density and universe.
@@ -146,10 +152,13 @@ impinfo:
     
 sinfo:
     For each surface defined in the input file, return the list of cells where it is used.
+
+    At the end list all used types of surfaces.
     
 vsource:
-    Output data cards describing source for computation of volumes. Model dimensions must be specified in the -c option 
-    as a rcc that circumscribes the model. For example, 
+    Output data cards describing source for computation of volumes. Model
+    dimensions must be specified in the -c option as a rcc that circumscribes
+    the model. For example, 
 
     --mode vsource -c "10 20 -10 10 -20 20"
 
@@ -161,12 +170,27 @@ vsource:
 
     --mode vsource -s "10 11 12 13 14 15"
 
-    will generate planar source based on parameters of planes 10 -- 15 (these surfaces must be px, py and pz planes).
+    will generate planar source based on parameters of planes 10 -- 15 (these
+    surfaces must be px, py and pz planes).
 
 
 tallies:    
-    Output tally cards for calculation of volumes in all cells. Tally number can be given with the -s option, and with non-zero -u
-    one can specify cells of particular universe.
+    Output tally cards for calculation of volumes in all cells. Tally number
+    can be given with the -s option, and with non-zero -u one can specify cells
+    of particular universe.
+
+
+addgeom:
+    appends strings, specified in --map file  to geometry definition of cells.
+    Example of the map file:
+
+    10  -1 , #12 #35
+    11   1 , #12 #35
+
+    First entry -- cell, which geometry should be modified. Second entry till
+    comma ('-1' and '1' in the above example) will be prepended to the cell's
+    existing geometry definition, the rest after the comma will be appended
+    after the existing geometry definition.
 
 """
 
@@ -322,7 +346,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill', 'matinfo', 'uinfo', 'impinfo', 'fillempty', 'sinfo', 'vsource', 'tallies'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill', 'matinfo', 'uinfo', 'impinfo', 'fillempty', 'sinfo', 'vsource', 'tallies', 'addgeom'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -405,13 +429,43 @@ def main():
             print 'f{}:n {}'.format(n, fmt.format(' '.join(map(str, rin.shorten(sorted(cset))))))
             print 'sd{} 1 {}r'.format(n, len(cset)-1)
 
+        elif args.mode == 'addgeom':
+            # add stuff to geometry definition of cells.
+
+            # Get info from the --map file:
+            extr = {}
+            for l in open(args.map):
+                l = l.strip()
+                if l:
+                    c, s = l.split(None, 1)
+                    if ',' in s:
+                        s1, s2 = s.split(',')
+                        s1 = ' ' + s1 + ' '
+                        s2 = ' ' + s2 + ' '
+                    else:
+                        s1 = ' ' + s + ' '
+                        s2 = ''
+                    c = int(c)
+                    extr[c] = (s1, s2)
+    
+            for c in cards:
+                if c.ctype == mp.CID.cell:
+                    c.get_values()
+                    if c.name in extr.keys():
+                        s1, s2 = extr[c.name]
+                        c.geom_prefix = s1
+                        c.geom_suffix = s2
+                print c.card(), 
+
+
 
         elif args.mode == 'uexp':
+            N = args.u
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     c.get_values()
                     if 'u' not in map(lambda t: t[1], c.values):
-                        c.input[-1] += ' u=0'
+                        c.input[-1] += N # ' u=0'
                 print c.card(),
 
         elif args.mode == 'wrap':
@@ -550,9 +604,16 @@ def main():
                         uset.add(c.get_f())
 
             # next runs: find all other cells:
-            for c in cards:
-                if c.ctype == mp.CID.cell and c.get_u() in uset:
-                    cset.add(c.name)
+            again = True
+            while again:
+                again = False
+                for c in cards:
+                    if c.ctype == mp.CID.cell and c.get_u() in uset:
+                        cset.add(c.name)
+                        if c.get_f() is not None:
+                            if c.get_f() not in uset:
+                                uset.add(c.get_f())
+                                again = True
 
             # final run: for all cells find surfaces, materials, etc.                    
             for c in cards:
@@ -744,10 +805,12 @@ def main():
         elif args.mode == 'sinfo':
             # first, get the list of surfaces:
             sl = {}
+            st = set() # set of used surface types
             for c in cards:
                 if c.ctype == mp.CID.surface:
                     c.get_values()
                     sl[c.name] = set() 
+                    st.add(c.stype)
             # for each surface return list of cells:
             for c in cards:
                 if c.ctype == mp.CID.cell:
@@ -758,6 +821,8 @@ def main():
             # print out:
             for s, cs in sorted(sl.items()):
                 print s, sorted(cs)
+            for s in sorted(st):
+                print s
 
         
         elif args.mode == 'vsource':
@@ -851,7 +916,8 @@ def main():
 
         elif args.mode == 'fillempty':
             # add 'FILL =' to all void non-filled cells.
-            N = ' fill={} '.format(args.u)
+            # N = ' fill={} '.format(args.u)
+            N = args.u
             M = int(args.m)
             cl = []
             if args.map != '':
@@ -861,7 +927,6 @@ def main():
             if args.c != '0':
                 cl += args.c.split()
             cl = set(rin.expand(cl))
-            print 'cl:', cl
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     c.get_values()

@@ -11,6 +11,7 @@ re_ind = re.compile('\[.+\]')     # interior of square brackets for tally in lat
 re_rpt = re.compile('\d+[ri]', flags=re.IGNORECASE)  # repitition syntax of MCNP input file
 re_prm = re.compile('((imp:n|imp:p|tmp)\s+\S+)')     # imp or tmp parameters in cell card
 re_prm = re.compile('[it]mp:*[npe]*[=\s]+\S+', flags=re.IGNORECASE)
+re_prm = re.compile('([it]mp:*[npe]*[=\s]+)(\S+)', flags=re.IGNORECASE)
 
 fmt_d = lambda s: '{{:<{}d}}'.format(len(s))
 fmt_g = lambda s: '{{:<{}g}}'.format(len(s))
@@ -121,6 +122,7 @@ class Card(object):
         # are optional.
         self.get_input()
 
+
     def print_debug(self, comment, key='tihv'):
         d = self.debug
         if d:
@@ -216,10 +218,10 @@ class Card(object):
 
             # imp and tmp parameters:
             # print 're_prm: inp', repr(inpt)
-            for s in re_prm.findall(inpt):
+            for s1, s2 in re_prm.findall(inpt):
                 # print 're_prm: fnd', repr(s)
-                d['~'].append(s)
-                inpt = inpt.replace(s, '~', 1)
+                d['~'].append(s2)
+                inpt = inpt.replace(s1 + s2, s1 + '~', 1)
 
 
         # replace repitition syntax in junks:
@@ -249,7 +251,7 @@ class Card(object):
         """
         self._protect_nums()
         if self.ctype == CID.cell:
-            inpt, vt = _split_cell(self.input)
+            inpt, vt = _split_cell(self.input, self)
             self.name = vt[0][0] 
         elif self.ctype == CID.surface:
             inpt, vt, stype, scoef = _split_surface(self.input)
@@ -269,6 +271,7 @@ class Card(object):
         self.print_debug('get_values', 'iv')
         return
 
+
     def get_u(self):
         """
         Returns universe, the cells belongs to.
@@ -286,6 +289,8 @@ class Card(object):
             else:
                 self.__u = None
             return self.__u
+
+
     def get_m(self):
         """
         For cell card return material number
@@ -409,6 +414,15 @@ class Card(object):
         """
         Return multi-line string representing the card.
         """
+        if self.ctype == CID.cell and self.geom_prefix + self.geom_suffix != '':
+            newvals = []
+            for v, t in self.values:
+                if t == 'gpr':
+                    v = self.geom_prefix
+                elif t == 'gsu':
+                    v = self.geom_suffix
+                newvals.append((v, t))
+            self.values = newvals
 
         if self.input:
             # put values back to meaningful parts:
@@ -523,7 +537,7 @@ class Card(object):
 
 
 
-def _split_cell(input_):
+def _split_cell(input_, self):
     """
     Replace integers in the meaningful parts of a cell card with format specifiers,
     and return a list of replaced values together with their types.
@@ -559,9 +573,20 @@ def _split_cell(input_):
         # get material and density.
         # Density, if specified in cells card, should be allready hidden
         ms = t.pop(0)
-        inpt = inpt.replace(ms, tp, 1)
+        if int(ms) == 0:
+            inpt = inpt.replace(ms, tp+tp , 1)
+        else:
+            inpt = inpt.replace(ms, tp, 1)
+            inpt = inpt.replace('~', '~'+tp, 1)
         vals.append((int(ms), 'mat'))
         fmts.append(fmt_d(ms))
+
+        # placeholder for geometry prefix
+        self.geom_prefix = ''
+        vals.append((self.geom_prefix, 'gpr'))
+        fmts.append('{}')
+
+
 
         # Get geometry and parameters blocks I assume that geom and param
         # blocks are separated by at least one space, so there will be an
@@ -593,13 +618,18 @@ def _split_cell(input_):
             vals.append((int(s), t))
             fmts.append(f)
 
-        # At this point all geom entries are replaced in inpt. THe rest should work only
-        # with the parm part of inpt. To endure this, inpt is splitted into inpt_geom and inpt_parm:
+        # geometry suffix
+        self.geom_suffix = ''
+        vals.append((self.geom_suffix, 'gsu'))
+        fmts.append('{}')
+
+        # At this point all geom entries are replaced in inpt. The rest should work only
+        # with the parm part of inpt. To ensure this, inpt is splitted into inpt_geom and inpt_parm:
         if parm:
             i = inpt.index(parm[0])
         else:
             i = len(inpt)
-        inpt_geom = inpt[:i]
+        inpt_geom = inpt[:i] + '_' # placeholder for geometry suffix
         inpt_parm = inpt[i:]
 
         # print 'i', i
