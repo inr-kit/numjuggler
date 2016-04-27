@@ -186,11 +186,20 @@ addgeom:
 
     10  -1 , #12 #35
     11   1 , #12 #35
+    135
 
     First entry -- cell, which geometry should be modified. Second entry till
     comma ('-1' and '1' in the above example) will be prepended to the cell's
     existing geometry definition, the rest after the comma will be appended
     after the existing geometry definition.
+
+    If the cell number is not followed by any entry (including the comma), this cell
+    will be removed from the resulting input file. In the above example, cell 135 will
+    be removed.
+
+
+merge:
+    put two input files into a single file. Second input file is given in the -m option. 
 
 """
 
@@ -346,7 +355,7 @@ def main():
     p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
     p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
     p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill', 'matinfo', 'uinfo', 'impinfo', 'fillempty', 'sinfo', 'vsource', 'tallies', 'addgeom'], default='renum')
+    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'split', 'mdupl', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill', 'matinfo', 'uinfo', 'impinfo', 'fillempty', 'sinfo', 'vsource', 'tallies', 'addgeom', 'merge'], default='renum')
     p.add_argument('--debug', help='Additional output for debugging', action='store_true')
     p.add_argument('--log', type=str, help='Log file.', default='')
 
@@ -434,18 +443,24 @@ def main():
 
             # Get info from the --map file:
             extr = {}
+            rem = set()
             for l in open(args.map):
                 l = l.strip()
                 if l:
-                    c, s = l.split(None, 1)
-                    if ',' in s:
-                        s1, s2 = s.split(',')
-                        s1 = ' ' + s1 + ' '
-                        s2 = ' ' + s2 + ' '
+                    tokens = l.split(None, 1)
+                    if len(tokens) == 1:
+                        # special case: cell c should be removed from the resulting input.
+                        rem.add(int(tokens[0]))
                     else:
-                        s1 = ' ' + s + ' '
-                        s2 = ''
-                    c = int(c)
+                        c, s = tokens
+                        c = int(c)
+                        if ',' in s:
+                            s1, s2 = s.split(',')
+                            s1 = ' ' + s1.strip() + ' '
+                            s2 = ' ' + s2.strip() + ' '
+                        else:
+                            s1 = ' ' + s.strip() + ' '
+                            s2 = ''
                     extr[c] = (s1, s2)
     
             for c in cards:
@@ -455,9 +470,51 @@ def main():
                         s1, s2 = extr[c.name]
                         c.geom_prefix = s1
                         c.geom_suffix = s2
-                print c.card(), 
+                    if c.name not in rem:
+                        print c.card(),
+                else:
+                    print c.card(), 
+
+        elif args.mode == 'merge':
+            # get cards of the second input
+            cards2 = list(mp.get_cards(args.m, debuglog))
+
+            def filt(cards, type_):
+                return filter(lambda x: x.ctype == type_, cards)
+
+            # message block:
+            b = filt(cards, mp.CID.message)
+            if not b:
+                b = filt(cards2, mp.CID.message)
+            if b:
+                for c in b:
+                    print c.card()
+
+            # title card:
+            t1 = filt(cards,  mp.CID.title)
+            t2 = filt(cards2, mp.CID.title)
+
+            # If no title, input file name is used
+            if t1:
+                t1 = t1[0].card()[:-1]
+            else:
+                t1 = args.inp
+
+            if t2:
+                t2 = t2[0].card()[:-1]
+            else:
+                t2 = args.m
+            print '{} merged with {}'.format(t1, t2)
 
 
+            # cells, surfaces and data cards:
+            for i in [mp.CID.cell, mp.CID.surface, mp.CID.data]:
+                for cl in [cards, cards2]:
+                    for c in filt(cl, i):
+                        print c.card(),
+                print ''
+
+        
 
         elif args.mode == 'uexp':
             N = args.u

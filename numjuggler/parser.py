@@ -108,6 +108,10 @@ class Card(object):
         # List of (v, t) tuples, where v -- value and t -- its type.
         self.values = []
 
+        # geometry prefix and suffix
+        self.geom_prefix = ''
+        self.geom_suffix = ''
+
         # some properties defined on demand
         ## cell properties
         self.__u = -1 # -1 means undefined. None -- not specified in input 
@@ -582,8 +586,7 @@ def _split_cell(input_, self):
         fmts.append(fmt_d(ms))
 
         # placeholder for geometry prefix
-        self.geom_prefix = ''
-        vals.append((self.geom_prefix, 'gpr'))
+        vals.append(('', 'gpr'))
         fmts.append('{}')
 
 
@@ -619,8 +622,7 @@ def _split_cell(input_, self):
             fmts.append(f)
 
         # geometry suffix
-        self.geom_suffix = ''
-        vals.append((self.geom_suffix, 'gsu'))
+        vals.append(('', 'gsu'))
         fmts.append('{}')
 
         # At this point all geom entries are replaced in inpt. The rest should work only
@@ -924,11 +926,11 @@ def get_cards(inp, debug=None):
         kw = l.lower().split()[0]
         if 'message:' == kw:
             # read message block right here
-            res = [l]
+            res = []
             while not is_blankline(l):
+                res.append(l)
                 l = replace_tab(f.next(), cln)
                 cln += 1
-                res.append(l)
             yield _yield(res, CID.message, cln-1)  # message card
             yield _yield(l, CID.blankline, cln)      # blank line
             l = replace_tab(f.next(), cln)
