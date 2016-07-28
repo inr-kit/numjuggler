@@ -98,13 +98,13 @@ class LikeFunction(object):
         Writes log to fname in format of map file.
         """
         d = {}
-        for t in 'csmu':
+        for t in 'csmut':
             d[t] = {}
         for (t, nnew), n in self.__ld.items():
             d[t[0]][n] = nnew
 
         with open(fname, 'w') as f:
-            for t in 'csmu':
+            for t in 'csmut':
                 print >> f, '-'*80
                 for n in sorted(d[t].keys()):
                     nnew = d[t][n]
