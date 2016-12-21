@@ -64,9 +64,9 @@ uexp:
     Add explicit "u=0" to cells with no "u" parameter. This can be useful when
     combining several input files into one model using universes. When cells
     have explicit zero universes, they can be renumbered using the -u or --map
-    option in subsequent runs.  
+    option in subsequent runs.
 
-    Another universe can be specified with the -u option. IN this case, the whole option should 
+    Another universe can be specified with the -u option. IN this case, the whole option should
     be specified, i.e. -u ' u=1 '
 
     The -c option can be used to specify cells to be handled. Examples:
@@ -74,7 +74,7 @@ uexp:
          -c "1 --150" -- add universe option only to these cells.
          -c "!2" -- do not add universe to cell 2, even if it safisfies above criteria
 
-split: 
+split:
     Split input into several files containing separate blocks. Output is written
     to files
 
@@ -85,7 +85,7 @@ split:
         inp.5data
 
     where inp is replaced by the name of the ofiginal input file. Note that
-    separate blocks do not contain blank lines. In order to concatenate block files 
+    separate blocks do not contain blank lines. In order to concatenate block files
     together into a single input, one needs to insert blank lines:
 
     > numjuggler --mode split inp_
@@ -97,11 +97,11 @@ split:
 mdupl:
     remove duplicate material cards. If an input file contains several mateiral
     cards with the same name (number), only the first one is kept, the other
-    are skipped. 
+    are skipped.
 
 
 matan:
-    Compare all meterials and list possible duplicates. 
+    Compare all meterials and list possible duplicates.
 
 sdupl:
     Report duplicate (close) surfaces.
@@ -109,16 +109,16 @@ sdupl:
 
 msimp:
     Simplify material cards.
-    
-    
+
+
 extr:
-    Extract the cell specified in the -c keyword together with materials, surfaces 
+    Extract the cell specified in the -c keyword together with materials, surfaces
     and transformations.
 
     If the first entry of the -c keyword is `!`, extract all but the cells specified after.
 
-    
-    
+
+
 nogq:
     Replaces GQ cards representing a cylinder with c/x plus tr card. In some
     cases this improves precision of cylinder's representations and helps to
@@ -129,18 +129,18 @@ nogq:
     If -c is given and differs from "0", the original GQ cards remain in the
     input, but commented out.  Otherwise (i.e. by default), they disappear from
     the input.
-    
-    
+
+
 count:
     Returns a list of cells with the number of surfaces used to define cell's
     geometry.  Two values returned for each cell: total amount of surfaces
     mentioned in the cell geometry, and the number of unique surfaces (that is
-    equal or less than the former). 
-    
-    Cells with total number of surfaces exceeding 100 (or the value given as 
+    equal or less than the former).
+
+    Cells with total number of surfaces exceeding 100 (or the value given as
     `-s` command line parameter) are denoted in the output with `*`
-    
-    
+
+
 nofill:
     Under counstruction: Removes all 'fill=' keywords from cell cards.
 
@@ -152,38 +152,38 @@ fillempty:
 
     When a file is given with the --map option, a list of cells is read from this file,
     and the "fill=" is added to these cells only, independent on cell's importance or material.
-    
+
     UPD: the content of -u option is copied into the input file as is. For example, to specify
     transformation in-place: -u '*fill=1 (0 0 5)'.
 
-    
+
 matinfo:
     Output information about how materials are used: for each material list of cells with density and universe.
-    
-    
+
+
 uinfo:
     For each universe defined in the input file, return a list of cells in this universe.
 
 
 impinfo:
     List all cells with zero importances.
-    
-    
+
+
 sinfo:
     For each surface defined in the input file, return the list of cells where it is used.
 
     At the end list all used types of surfaces.
-    
+
 vsource:
     Output data cards describing source for computation of volumes. Model
     dimensions must be specified in the -c option as a rcc that circumscribes
-    the model. For example, 
+    the model. For example,
 
     --mode vsource -c "10 20 -10 10 -20 20"
 
     will generate planar sources for the box 10 < x < 20, -10 < y < 10, -20 < z < 20.
 
-    --mode vsource -s 100 
+    --mode vsource -s 100
 
     will generate spherical source for the sphere 100.
 
@@ -193,7 +193,7 @@ vsource:
     surfaces must be px, py and pz planes).
 
 
-tallies:    
+tallies:
     Output tally cards for calculation of volumes in all cells. Tally number
     can be given with the -s option, and with non-zero -u one can specify cells
     of particular universe.
@@ -218,7 +218,7 @@ addgeom:
 
 
 merge:
-    put two input files into a single file. Second input file is given in the -m option. 
+    put two input files into a single file. Second input file is given in the -m option.
 
 
 remu:
@@ -525,7 +525,7 @@ def main():
             print 'sd{} 1 {}r'.format(nt, nc - 1)
             print 'fc{} '.format(nt),
             for u in ulst:
-                print len(csets[u]), 
+                print len(csets[u]),
             print
 
 
@@ -559,7 +559,7 @@ def main():
                                 s1 = ' ' + s.strip() + ' '
                                 s2 = ''
                             extr[c] = (s1, s2)
-    
+
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     c.get_values()
@@ -572,7 +572,7 @@ def main():
                     if c.name not in rem:
                         print c.card(),
                 else:
-                    print c.card(), 
+                    print c.card(),
 
         elif args.mode == 'merge':
             # Merge treats models as the main one and an additional one.
@@ -639,7 +639,7 @@ def main():
                     # First check if blk2 actually contains any cards:
                     flg = False
                     for c in blk2[t]:
-                        if c.ctype == t: 
+                        if c.ctype == t:
                             flg = True
                             break
                     if flg:
@@ -650,7 +650,7 @@ def main():
                         # print 'c numjuggler: end {} block from {}'.format(mp.CID.get_name(t), t2)
                         print cmnt.format('end', mp.CID.get_name(t))
 
-                if t != mp.CID.data: 
+                if t != mp.CID.data:
                     # do not add empty line after data block
                     print ''
 
@@ -746,7 +746,7 @@ def main():
 
             from pirs.mcnp import Material
             # read all material cards and convert to string representation
-            sd = {} 
+            sd = {}
             for c in cards:
                 c.get_values()
                 if c.ctype == mp.CID.data and c.dtype == 'Mn':
@@ -762,7 +762,7 @@ def main():
             # analyse material cards:
             i = 1
             for s, m in sd.items():
-                print i, m 
+                print i, m
                 i += 1
 
 
@@ -804,7 +804,7 @@ def main():
                             if mp.are_close_lists(s.scoefs, c.scoefs, pci=pcl.get(c.stype, [])):
                                 print c.card(comment=False)
                                 print s.card(comment=False)
-                                print 
+                                print
                                 # print 'is close to {}'.format(sn)
                                 break
                     else:
@@ -891,13 +891,13 @@ def main():
             print 'c mset', ' '.join(map(str, rin.shorten(sorted(mset))))
 
         elif args.mode == 'zrotate':
-            
+
             from pirs.core.trageom import Vector3, pi
             ag = float(args.c)    # in grad
             ar = ag * pi / 180.   # in radians
 
             # new transformation number:
-            trn = args.t 
+            trn = args.t
             trcard = '*tr{} 0 0 0 {} {} 90   {} {} 90   90 90 0'.format(trn, ag, ag-90, 90+ag, ag)
             # change all tr cards and surface cards:
             for c in cards:
@@ -956,9 +956,9 @@ def main():
                             c.values[7] = (b4, 'float')
                             c.values[8] = (b5, 'float')
 
-                print c.card(), 
+                print c.card(),
 
-        
+
         elif args.mode == 'annotate':
             # Read text from map file, add "c" to each line and put after the title.
             if args.c == "0":
@@ -1039,7 +1039,7 @@ def main():
 
             # first run through cards: define filling
             for c in cards:
-                if c.ctype == mp.CID.cell: 
+                if c.ctype == mp.CID.cell:
                     if c.name in cset:
                         if c.get_f() is not None:
                             uset.add(c.get_f())
@@ -1051,7 +1051,7 @@ def main():
             while again:
                 again = False
                 for c in cards:
-                    if c.ctype == mp.CID.cell: 
+                    if c.ctype == mp.CID.cell:
                         if c.get_u() in uset:
                             cset.add(c.name)
                             if c.get_f() is not None:
@@ -1059,7 +1059,7 @@ def main():
                                     uset.add(c.get_f())
                                     again = True
                         if c.name in cset:
-                            cref = c.get_refcells() 
+                            cref = c.get_refcells()
                             if cref.difference(cset):
                                 again = True
                                 cset = cset.union(cref)
@@ -1074,7 +1074,7 @@ def main():
                                 c.get_f(newv=0)
                             pset.add(c.name)
 
-            # final run: for all cells find surfaces, materials, etc.                    
+            # final run: for all cells find surfaces, materials, etc.
             cset = cset.union(pset)
             for c in cards:
                 if c.ctype == mp.CID.cell and c.name in cset:
@@ -1114,7 +1114,7 @@ def main():
                         print c.card(),
                     if c.dtype == 'TRn':#  and c.values[0][0] in tset:
                         print c.card(),
-        
+
         elif args.mode == 'nogq':
             from numjuggler import nogq
             try:
@@ -1133,8 +1133,8 @@ def main():
 
             vfmt = ' {:15.8e}'*3
             tfmt = 'tr{} 0 0 0 ' + ('\n     ' + vfmt)*3
-            trd = {} 
-            # replace GQ cylinders with c/x + tr 
+            trd = {}
+            # replace GQ cylinders with c/x + tr
             for c in cards:
                 crd = c.card()
                 if c.ctype == mp.CID.surface:
@@ -1146,9 +1146,9 @@ def main():
                             crd = crd[:-1] + '$ a^2={:12.6e} c={:12.6e}\n'.format(a2, g + a2)
                         if abs((g + a2) / a2) < 1e-6:
                             # this is a cylinder. Comment original card and write another one
-                            R, x0, i, j = nogq.cylinder(p, a2, g, k)                            
+                            R, x0, i, j = nogq.cylinder(p, a2, g, k)
                             # add transformation set
-                            tr = tuple(i) + tuple(j) + tuple(k) 
+                            tr = tuple(i) + tuple(j) + tuple(k)
                             for k, v in trd.items():
                                 if tr == v:
                                     trn = k
@@ -1166,13 +1166,13 @@ def main():
                 if trd and c.ctype == mp.CID.blankline:
                     # this is blankline after surfaces. Put tr cards here
                     for k, v in sorted(trd.items()):
-                        ijk = (k + trn0,) + v 
+                        ijk = (k + trn0,) + v
                         print tfmt.format(*ijk)
                     trd = {}
 
         elif args.mode == 'count':
             # take the maximal number of surfaces from -s:
-            Nmax = int(args.s) 
+            Nmax = int(args.s)
             if Nmax == 0:
                 Nmax = 100 # default max value.
             print ('{:>10s}'*5).format('Cell', 'Line', 'all', 'unique', '>{}'.format(Nmax))
@@ -1203,12 +1203,12 @@ def main():
                     su += u
                     ma = max(ma, a)
                     mu = max(mu, u)
-            print 
+            print
             print 'sum', ('{:>10d}'*3).format(sc, sa, su)
             print 'max', ('{:>10d}'*3).format(00, ma, mu)
 
         elif args.mode == 'nofill':
-            # remove all fill= keywords from cell cards. 
+            # remove all fill= keywords from cell cards.
             print ' Mode --mode nofill is not implemented yet.'
 
             # First loop: find and remove all FILL keywords. Store universes for the second loop.
@@ -1222,7 +1222,7 @@ def main():
                             uset.add(v)
                             c.remove_fill()
                             break
-                print c.card(), 
+                print c.card(),
 
             print 'Universes used for FILL:', uset
 
@@ -1243,7 +1243,7 @@ def main():
                 if c.ctype == mp.CID.surface:
                     break
 
-            # print out information 
+            # print out information
             fmt = ' '*8 + '{:>16}'*3
             print fmt.format('Cell', 'density', 'universe')
             for m in sorted(res.keys()):
@@ -1272,7 +1272,7 @@ def main():
                     l.append(c.name)
                 elif c.ctype == mp.CID.surface:
                     break
-            # print out 
+            # print out
             if args.u == '0':
                 for u, l in sorted(res.items()):
                     if sflag:
@@ -1288,7 +1288,7 @@ def main():
                 if sflag:
                     l = sorted(l)
                 for e in rin.shorten(l):
-                    print e, 
+                    print e,
 
 
         elif args.mode == 'impinfo':
@@ -1334,7 +1334,7 @@ def main():
             for s in sorted(st):
                 print s
 
-        
+
         elif args.mode == 'vsource':
 
             def print_planar(params, d=1e-5, u='0'):
@@ -1481,13 +1481,13 @@ def main():
                     c.get_values()
                     if dll:
                         if c.name in dll.keys():
-                            c.input[-1] += dll[c.name] 
-                    else:                        
+                            c.input[-1] += dll[c.name]
+                    else:
                         m = c.get_m()
                         f = c.get_f()
                         imp = c.get_imp()
                         if imp['imp:n'] > 0 and m == M and f in [0, None]:
-                            c.input[-1] += N 
+                            c.input[-1] += N
                 print c.card(),
 
         elif args.mode == 'renum':
