@@ -4,11 +4,13 @@
 Analyse fmesh cards.
 """
 
-from numjuggler.parser import Card
+from numjuggler.parser import Card, are_close_vals
 
-def get_elements(lst, type_=float):
+
+def _get_elements(lst, type_=float):
     """
-    return all first elements of lst that can be converted to type_. Remove them from lst
+    return all first elements of lst that can be converted to type_. Remove them
+    from lst.
     """
     r = []
     try:
@@ -20,9 +22,41 @@ def get_elements(lst, type_=float):
         lst.insert(0, e)
     return r
 
+
+def _get_ints(bl):
+    """
+    For the list of boundaries bl return a shorter bl and ints.
+
+    bl should include the -1st boundary, which in case of geom=xyz is not
+    included in ?mesh lists.
+    """
+    bnew = [bl[0]]
+    ints = []
+    v0 = bl[0]
+    v1 = bl[1]
+    d1 = v1 - v0
+    i = 1
+    for v2 in bl[2:]:
+        d2 = v2 - v1
+        if are_close_vals(d1, d2, re=1e-6, ra=1e-16):
+            i += 1
+            v1 = v2
+        else:
+            ints.append(i)
+            bnew.append(v1)
+            d1 = v2 - v1
+            v0 = v1
+            v1 = v2
+            i = 1
+    ints.append(i)
+    bnew.append(v1)
+    return bnew, ints
+
+
 class FmeshCard(Card):
     """
-    Adds to the parent class fmesh-specific methods to get fmesh-specific parameters.
+    Adds to the parent class fmesh-specific methods to get fmesh-specific
+    parameters.
     """
 
     def get_values(self):
@@ -43,9 +77,9 @@ class FmeshCard(Card):
                 self.geom = tokens.pop(0)
             elif t in ('origin',) or t[1:] in ('mesh',):
                 # this should work for emesh, imesh, jmesh, kmesh
-                setattr(self, t, tuple(get_elements(tokens, float)))
+                setattr(self, t, tuple(_get_elements(tokens, float)))
             elif t[1:] in ('ints',):
-                setattr(self, t, tuple(get_elements(tokens, int)))
+                setattr(self, t, tuple(_get_elements(tokens, int)))
         return
 
     def ints(self, d=0):
@@ -77,4 +111,3 @@ class FmeshCard(Card):
                 for i in range(n + 1):
                     yield v0 + d*i
                 v0 = v1
-

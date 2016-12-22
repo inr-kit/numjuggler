@@ -6,8 +6,8 @@ import warnings
 
 
 # regular expressions
-re_int = re.compile('\D{0,1}\d+') # integer with one prefix character
-re_ind = re.compile('\[.+\]', flags=re.DOTALL)     # interior of square brackets for tally in lattices
+re_int = re.compile('\D{0,1}\d+')                    # integer with one prefix character
+re_ind = re.compile('\[.+\]', flags=re.DOTALL)       # interior of square brackets for tally in lattices
 re_rpt = re.compile('\d+[ri]', flags=re.IGNORECASE)  # repitition syntax of MCNP input file
 re_prm = re.compile('((imp:n|imp:p|tmp)\s+\S+)')     # imp or tmp parameters in cell card
 re_prm = re.compile('[it]mp:*[npe]*[=\s]+\S+', flags=re.IGNORECASE)
@@ -67,6 +67,7 @@ class __CIDClass(object):
 
 CID = __CIDClass()
 
+
 class Card(object):
     """
     Representation of a card.
@@ -114,19 +115,19 @@ class Card(object):
 
         # some properties defined on demand
         ## cell properties
-        self.__u = -1 # -1 means undefined. None -- not specified in input
-        self.__f = -1 # fill
-        self.__m = -1 # material
-        self.__d = '' # density
-        self.__i = -1 # importances
+        self.__u = -1  # -1 means undefined. None -- not specified in input
+        self.__f = -1  # fill
+        self.__m = -1  # material
+        self.__d = ''  # density
+        self.__i = -1  # importances
         self.__cr = -1  # set of reference cells.
         ## surface properties
-        self.__st = '' # '' means undefined.
+        self.__st = ''  # '' means undefined.
 
-        # Split card to template and meaningful part is always needed. Other operations
-        # are optional.
+        # Split card to template and meaningful part is always needed. Other
+        # operations are optional.
         self.get_input()
-
+        return
 
     def print_debug(self, comment, key='tihv'):
         d = self.debug
@@ -1187,8 +1188,22 @@ def get_blocks(cards):
                 cbt = c.ctype
     if cbc:
         d[cbt] = cbc
-
     return d
+
+
+def are_close_vals(x, y, re=1e-6, ra=0.):
+    """
+    Return True if x and y are closer then re or ra.
+    """
+    if abs(x - y) <= ra:
+        r = True
+    elif x != 0:
+        r = abs((x - y)/x) <= re
+    else:
+        # y is not equal to x and x is 0 -> y is not 0.
+        r = abs((x - y)/y) <= re
+    return r
+
 
 def are_close_lists(x, y, re=1e-6, pci=[]):
     """
@@ -1198,15 +1213,17 @@ def are_close_lists(x, y, re=1e-6, pci=[]):
         res = False
         msg = 'Different lenght'
 
-    # pci -- list of indices that define elements of x and y to be checked for proportionality only.
+    # pci -- list of indices that define elements of x and y to be checked for
+    # proportionality only.
     if len(pci) == 0:
-        # empty list means all x and y elements compare without arbitrary normalization.
+        # empty list means all x and y elements compare without arbitrary
+        # normalization.
         xe = x[:]
         ye = y[:]
         xp = []
         yp = []
     else:
-        if len(pci) %2 == 1:
+        if len(pci) % 2 == 1:
             # augment with len(x) +1
             pci = tuple(pci) + (len(x) + 1, )
         xe = []
@@ -1237,12 +1254,7 @@ def are_close_lists(x, y, re=1e-6, pci=[]):
         else:
             n = 0
             for xx, yy in zip(xl, yl):
-                if xx == yy:
-                    r = True
-                elif xx != 0:
-                    r = abs((xx - yy)/xx) <= re
-                else:
-                    r = abs((xx - yy)/yy) <= re
+                r = are_close_vals(xx, yy, re)
                 if not r:
                     m = 'diff at {}'.format(n)
                     break
