@@ -114,7 +114,7 @@ class Card(object):
 
         # some properties defined on demand
         ## cell properties
-        self.__u = -1 # -1 means undefined. None -- not specified in input 
+        self.__u = -1 # -1 means undefined. None -- not specified in input
         self.__f = -1 # fill
         self.__m = -1 # material
         self.__d = '' # density
@@ -200,7 +200,7 @@ class Card(object):
     def _protect_nums(self):
         """
         In the meaningful part of the card replace numbers that do not
-        represent cell, surface or a cell parameter with some unused char. 
+        represent cell, surface or a cell parameter with some unused char.
         """
 
         inpt = '\n'.join(self.input)
@@ -258,7 +258,7 @@ class Card(object):
         self._protect_nums()
         if self.ctype == CID.cell:
             inpt, vt = _split_cell(self.input, self)
-            self.name = vt[0][0] 
+            self.name = vt[0][0]
         elif self.ctype == CID.surface:
             inpt, vt, stype, scoef = _split_surface(self.input)
             self.stype = stype.lower()
@@ -268,7 +268,7 @@ class Card(object):
             inpt, vt, dtype = _split_data(self.input)
             self.dtype = dtype
             if dtype == 'TRn':
-                unit, inpt, fvals = _parse_tr(inpt) 
+                unit, inpt, fvals = _parse_tr(inpt)
                 self.unit = unit
                 vt += fvals
         else:
@@ -296,7 +296,7 @@ class Card(object):
                     s.add(v)
             self.__cr = s
             return self.__cr
-        
+
 
     def get_u(self):
         """
@@ -357,7 +357,7 @@ class Card(object):
             # density entry is hidden in the input and available as the 1-st entry in self.hidden dictionary.
             self.__d = float(self.hidden['~'][0])
             return self.__d
-            
+
 
     def get_f(self, newv=None):
         """
@@ -425,11 +425,11 @@ class Card(object):
 
     def remove_fill(self):
         """
-        Removes the FILL= keyword of a cell card. 
+        Removes the FILL= keyword of a cell card.
 
         This method must be called after get_values().
         """
-        # Fill card is followed by one universe number and optionally by transformation in parentheses. Optionally, 
+        # Fill card is followed by one universe number and optionally by transformation in parentheses. Optionally,
         # the `fill` keyword can be prefixed with asterisk
 
         # Two possibilites are here: (1) start from original line and clean out everything related to FILL,
@@ -439,7 +439,7 @@ class Card(object):
         # Case (2): Modify existing input and values. All content after the FILL keyword is parsed
         # and thus is given in values, while input provides placefor them. THus, simply replaceing
         # values with spaces will almost do the job. The remaining part -- the keyword itself that
-        # is presented in input. 
+        # is presented in input.
         vals = []  # new values list.
         oldv = self.values[:]
         state = 'before'
@@ -457,7 +457,7 @@ class Card(object):
                     state = 'after'
 
             vals.append((v, t))
-                    
+
         self.values = vals
         self.print_debug('remove_fill', 'iv')
         return
@@ -479,7 +479,7 @@ class Card(object):
     #         if len(l.strip()) > 0:
     #             res.append(l)
     #     return '\n'.join(res)
-        
+
 
     def card(self, wrap=False, comment=True):
         """
@@ -611,7 +611,7 @@ class Card(object):
 
 def _parse_geom(geom):
     """
-    Parse the geometry part of a cell card. 
+    Parse the geometry part of a cell card.
     """
     t = geom.split()
     vals = []
@@ -759,7 +759,7 @@ def _split_cell(input_, self):
             i = len(inpt)
 
 
-            
+
     inpt_geom = inpt[:i]
     inpt_parm = inpt[i:]
 
@@ -788,9 +788,14 @@ def _split_cell(input_, self):
             # print '_split_cell: has fill!'
             # assume that only one integer follows the fill keyword, optionally with transformation in parentheses.
             vs = t.pop(0)
+            # if transformation in parentheses follows the universe number
+            # immediately, split this manually:
+            if '(' in vs:
+                vs, ttt = vs.split('(')
+                t.insert(0, ttt)
             vv = int(vs)
             vf = fmt_d(vs)
-            vt = 'fill' 
+            vt = 'fill'
             inpt_parm = inpt_parm.replace(vs, tp, 1)
             vals.append((vv, vt))
             fmts.append(vf)
@@ -830,7 +835,7 @@ def _split_cell(input_, self):
                         vfl.append(fmt_s(vs))
                         vtl.append('#tparam')
 
-                # check if only one parameter in parenthethes -- it is tr number, 
+                # check if only one parameter in parenthethes -- it is tr number,
                 # not tr parameter
                 if len(vsl) == 3:
                     vvl[1] = int(vvl[1])
@@ -884,7 +889,7 @@ def _split_surface(input_):
         inpt = inpt.replace(ns, tp, 1)
         vals.append((int(ns), 'tr'))
         fmts.append(fmt_d(ns))
-        st = t.pop(0) 
+        st = t.pop(0)
     elif ns[0] == '-':
         # periodic surface
         ns = ns[1:]
@@ -1044,7 +1049,7 @@ def is_blankline(l):
 
 def get_cards(inp, debug=None):
     """
-    Iterable, return instances of the Card() class representing 
+    Iterable, return instances of the Card() class representing
     cards in the input file.
 
     inp -- is the filename.
@@ -1161,7 +1166,7 @@ def get_cards(inp, debug=None):
 
 def get_blocks(cards):
     """
-    Return a dict of cards in blocks. 
+    Return a dict of cards in blocks.
     """
 
     d = {}
@@ -1228,7 +1233,7 @@ def are_close_lists(x, y, re=1e-6, pci=[]):
             res.append(True)
             msg.append('exact match')
         else:
-            n = 0 
+            n = 0
             for xx, yy in zip(xl, yl):
                 if xx == yy:
                     r = True
