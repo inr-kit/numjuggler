@@ -81,7 +81,7 @@ class Card(object):
         self.ctype = ctype
 
         # data card type. Defined from the get_values() method.
-        # has sence only to data cards (see ctype). For other card types
+        # Has sense only to data cards (see ctype). For other card types
         # is None.
         self.dtype = None
 
