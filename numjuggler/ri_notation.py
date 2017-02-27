@@ -6,6 +6,8 @@ are not possible or saldom.
 
 """
 
+from __future__ import print_function
+
 
 def shorten(list_, rmin=2, imin=2):
     """
@@ -108,18 +110,18 @@ if __name__ == '__main__':
           [1, 2, 3, 3, 5, 6, 7, 21, 23, 25]]
 
     def test_(tl, rmin, imin, name):
-        print name, '*'*20
+        print(name, '*'*20)
         for l in tl:
             ls = list(shorten(l, imin=imin, rmin=rmin))
             le = list(expand(ls))
 
             if l != le:
                 for ll in [l, ls, le]:
-                    print '**',
+                    print('**', end=' ')
                     for e in ll:
-                        print e,
-                    print
-                    print '-'*10
+                        print(e, end=' ')
+                    print()
+                    print('-'*10)
 
     for imin in [1, 2, 3, 4]:
         for rmin in [1, 2, 3, 4]:

@@ -2,15 +2,17 @@
 Functions to convert an arbitrary GQ cylinder into C/X+TR-defined cylinder.
 """
 
+from __future__ import print_function
+
 try:
     # try because numpy might be unavailable.
     import numpy
 except ImportError:
-    print "Numpy package is required for --mode nogq but cannot "
-    print "be found. Install it with "
-    print ""
-    print " > pip install numpy"
-    print ""
+    print("Numpy package is required for --mode nogq but cannot ")
+    print("be found. Install it with ")
+    print("")
+    print(" > pip install numpy")
+    print("")
     raise
 except:
     raise
@@ -82,7 +84,7 @@ def get_a2(p):
     if D == E == F == 0.:
         #
         pass
-    for k, a2 in a2dic.items():
+    for k, a2 in list(a2dic.items()):
         c = ABC - 2.0*a2
     return a2, c
 
@@ -97,11 +99,11 @@ def is_gq_cylinder(p):
 
     # A, B and C are non-negative
     if a < 0 or b < 0 or c < 0:
-        print ' not a cylinder since a, b or c is negative: ',  p[0:3]
+        print(' not a cylinder since a, b or c is negative: ',  p[0:3])
         raise ValueError()
 
     if not numpy.isclose(d*e*f, -8.*(1.-a)*(1.-b)*(1.-c)):
-        print ' D*E*F differs from -8(1-A)(1-B)(1-C)', p
+        print(' D*E*F differs from -8(1-A)(1-B)(1-C)', p)
         raise ValueError()
 
     return 1.0/p[0:3].sum() * p
@@ -187,7 +189,7 @@ def gq_radius(p, o):
                        xo*yo*d, xo*zo*f, yo*zo*e))
     r2 = rrr.sum()
     if r2 < 0:
-        print 'Radius is imaginary: r^2=', r2
+        print('Radius is imaginary: r^2=', r2)
     return r2**0.5
 
 
@@ -249,7 +251,7 @@ def get_gq_params(l):
     of) the GQ card.
     """
     p, pl = l.lower().split('gq')
-    return numpy.array(map(float, pl.split()))
+    return numpy.array(list(map(float, pl.split())))
 
 
 if __name__ == '__main__':
@@ -281,7 +283,7 @@ if __name__ == '__main__':
     po = None
     for xo0 in [1e-4, 791.866]:
 
-        print 'xo0', xo0, '***'*20
+        print('xo0', xo0, '***'*20)
 
         for n in [532, 25099, 25100, 25177, 25185, 25183, 25187, 25179, 25181]:
             p = get_gq_params(pd[n])
@@ -307,7 +309,7 @@ if __name__ == '__main__':
             # print '-'*20
 
             r = gq_cylinder(p)
-            print r
+            print(r)
 
 
 

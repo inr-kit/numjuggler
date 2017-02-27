@@ -1,7 +1,10 @@
 """
 Functions to renumber cells, surfaces, etc. in MCNP input file.
 """
+from __future__ import print_function
+
 import warnings
+import collections
 
 
 class LikeFunction(object):
@@ -43,14 +46,14 @@ class LikeFunction(object):
 
     @staticmethod
     def __applyD(f, n):
-        if callable(f):
+        if isinstance(f, collections.Callable):
             return f(n)
         else:
             return f
 
     @staticmethod
     def __applyL(f, n):
-        if callable(f):
+        if isinstance(f, collections.Callable):
             return f(n)
         else:
             return n + int(f)
@@ -95,8 +98,8 @@ class LikeFunction(object):
                 ld[k] = n
         # check that void material not changed:
         if t[0].lower() == 'm' and n == 0 and nnew != 0:
-            print 'WARNING: material {} replaced with {}.'.format(n, nnew)
-            print 'Add cell density to the resulting input file.'
+            print('WARNING: material {} replaced with {}.'.format(n, nnew))
+            print('Add cell density to the resulting input file.')
         return nnew
 
     def write_log_as_map(self, fname):
@@ -106,16 +109,16 @@ class LikeFunction(object):
         d = {}
         for t in 'csmut':
             d[t] = {}
-        for (t, nnew), n in self.__ld.items():
+        for (t, nnew), n in list(self.__ld.items()):
             d[t[0]][n] = nnew
 
         with open(fname, 'w') as f:
             for t in 'csmut':
-                print >> f, '-'*80
+                print('-'*80, file=f)
                 for n in sorted(d[t].keys()):
                     nnew = d[t][n]
                     if nnew != n:
-                        print >> f, '{} {:>6d}:   {:>6d}'.format(t, nnew, n)
+                        print('{} {:>6d}:   {:>6d}'.format(t, nnew, n), file=f)
 
 
 def get_numbers(scards):
@@ -145,7 +148,7 @@ def get_indices(scards):
     d = get_numbers(scards)
 
     res = {}  # resulting dictionaries of the form number: index
-    for t, vl in d.items():
+    for t, vl in list(d.items()):
         di = {}
         cin = 1  # all indices start from 1
         for v in vl:
@@ -162,7 +165,7 @@ def get_indices(scards):
 def _get_ranges_from_set(nn):
     nnl = sorted(nn)
     if nnl:                         # nnl can be empty
-        if filter(lambda e: not isinstance(e, int), nn):
+        if [e for e in nn if not isinstance(e, int)]:
             # for float elements of nn only one range, (min, max), is returned
             yield (nnl[0], nnl[-1])
         else:
@@ -199,12 +202,12 @@ def read_map_file(fname):
           'm': 'mat'}
 
     d = {}
-    for k in td.keys():
+    for k in list(td.keys()):
         d[td[k]] = [0, []]  # default dn and list of ranges.
     with open(fname, 'r') as f:
         for l in f:
             ll = l.lower().lstrip()
-            if ll and ll[0] in td.keys() and ':' in ll:
+            if ll and ll[0] in list(td.keys()) and ':' in ll:
                 t = td[ll[0]]
                 rs, os = ll[1:].split(':')
                 rs = rs.replace(' ', '')  # remove spaces from left part
@@ -215,7 +218,7 @@ def read_map_file(fname):
                 else:
                     if '--' in rs:
                         # there are two entries in the range definition.
-                        n1, n2 = map(int, rs.split('--'))
+                        n1, n2 = list(map(int, rs.split('--')))
                     else:
                         # only one value is given. Means the one-value-range.
                         n1 = int(rs)
