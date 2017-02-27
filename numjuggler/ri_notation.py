@@ -9,7 +9,8 @@ are not possible or saldom.
 
 def shorten(list_, rmin=2, imin=2):
     """
-    Generator of list elements that uses 'Nr' and 'Ni' notation where applicable.
+    Generator of list elements that uses 'Nr' and 'Ni' notation where
+    applicable.
     """
 
     if len(list_) < 2:
@@ -30,10 +31,10 @@ def shorten(list_, rmin=2, imin=2):
                     yield str(n-1) + 'i'
                 else:
                     for i in range(n-1, 0, -1):
-                        yield xp - dp*i 
+                        yield xp - dp*i
                 yield xp
         xp = list_[0]
-        dp = list_[1] - xp # ensure that the 1-st two elements compose a series. 
+        dp = list_[1] - xp  # ensure that 1st two elements compose a series.
         n = 0
         yield xp
         for x in list_[1:]:
@@ -41,11 +42,14 @@ def shorten(list_, rmin=2, imin=2):
             if d == dp:
                 n += 1
             else:
-                for y in _yield(): yield y
+                for y in _yield():
+                    yield y
                 n = 1
             xp = x
             dp = d
-        for y in _yield(): yield y
+        for y in _yield():
+            yield y
+
 
 def expand(list_):
     """
@@ -54,7 +58,7 @@ def expand(list_):
     """
     es = None
     for e in list_:
-        if es != None:
+        if es is not None:
             e = float(e)
             d = (e - es) / (n+1)
             for i in range(1, n+2):
@@ -73,7 +77,6 @@ def expand(list_):
             yield ep
 
 
-
 if __name__ == '__main__':
     # test cases should cover the following situations:
     # * empty list
@@ -85,24 +88,24 @@ if __name__ == '__main__':
     # * at begin and at end
     # * at begin, inside and end
 
-    tr = [ [],
-           [1, 2, 2, 2, 1],
-           [1, 1, 1, 2],
-           [1, 2, 2, 2],
-           [1, 2, 3, 4],
-           [1, 1, 1, 1],
-           [1, 1, 2, 3, 3],
-           [1, 1, 2, 3, 3, 4, 5, 5, 5]]
+    tr = [[],
+          [1, 2, 2, 2, 1],
+          [1, 1, 1, 2],
+          [1, 2, 2, 2],
+          [1, 2, 3, 4],
+          [1, 1, 1, 1],
+          [1, 1, 2, 3, 3],
+          [1, 1, 2, 3, 3, 4, 5, 5, 5]]
 
-    ti = [ [],
-           [1, 3, 4, 5, 7],
-           [1, 2, 3, 7, 9],
-           [1, 2, 4, 9, 11, 13],
-           [1, 2, 4, 7, 7],
-           [1, 2, 3],
-           [1, 2, 3, 4, 5],
-           [1, 2, 3, 3, 4, 5, 6],
-           [1, 2, 3, 3, 5, 6, 7, 21, 23, 25]]
+    ti = [[],
+          [1, 3, 4, 5, 7],
+          [1, 2, 3, 7, 9],
+          [1, 2, 4, 9, 11, 13],
+          [1, 2, 4, 7, 7],
+          [1, 2, 3],
+          [1, 2, 3, 4, 5],
+          [1, 2, 3, 3, 4, 5, 6],
+          [1, 2, 3, 3, 5, 6, 7, 21, 23, 25]]
 
     def test_(tl, rmin, imin, name):
         print name, '*'*20
@@ -113,12 +116,12 @@ if __name__ == '__main__':
             if l != le:
                 for ll in [l, ls, le]:
                     print '**',
-                    for e in ll: print e,
+                    for e in ll:
+                        print e,
                     print
                     print '-'*10
 
-
     for imin in [1, 2, 3, 4]:
         for rmin in [1, 2, 3, 4]:
-            test_(tr + ti, rmin, imin, 'CustomList imin={}, rmin={}'.format(imin, rmin))
-
+            test_(tr + ti, rmin, imin,
+                  'CustomList imin={}, rmin={}'.format(imin, rmin))

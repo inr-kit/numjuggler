@@ -3,14 +3,17 @@ Functions to renumber cells, surfaces, etc. in MCNP input file.
 """
 import warnings
 
+
 class LikeFunction(object):
     """
-    Class of callables that take two arguments, a number (integer) and a type (char or string):
+    Class of callables that take two arguments, a number (integer) and a type
+    (char or string):
 
         > f = LikeFunction(d)
         > n_new = f(n_old, 'c')
-    
-    This callable is used as a mapping for cell, surface, material, etc numbers in an MCNP input file.
+
+    This callable is used as a mapping for cell, surface, material, etc numbers
+    in an MCNP input file.
 
     The d argument of the constructor is a dictionary of the following form:
 
@@ -54,7 +57,7 @@ class LikeFunction(object):
 
     def __get_type(self, t):
         for key in [t, t[0]]:
-            if self.__p.has_key(key):
+            if key in self.__p:
                 return self.__p[key]
         else:
             return None, None
@@ -82,15 +85,18 @@ class LikeFunction(object):
         if self.__lf:
             ld = self.__ld
             k = (t, nnew)
-            if ld.has_key(k):
+            if k in ld:
                 if ld[k] != n:
-                    # raise ValueError('Non-injective mapping. ({}, {}) and ({}, {}) are mapped to {}'.format(t, ld[k], t, n, nnew))
-                    warnings.warn('Non-injective mapping. ({}, {}) and ({}, {}) are mapped to {}'.format(t, ld[k], t, n, nnew))
+                    warnings.warn('Non-injective mapping. ' +
+                                  '({}, {}) and ({}, {}) ' +
+                                  'are mapped to {}'.format(t, ld[k],
+                                                            t, n, nnew))
             else:
                 ld[k] = n
         # check that void material not changed:
         if t[0].lower() == 'm' and n == 0 and nnew != 0:
-            print 'WARNING: material {} replaced with {}. Add cell density to the resulting input file.'.format(n, nnew)
+            print 'WARNING: material {} replaced with {}.'.format(n, nnew)
+            print 'Add cell density to the resulting input file.'
         return nnew
 
     def write_log_as_map(self, fname):
@@ -114,12 +120,13 @@ class LikeFunction(object):
 
 def get_numbers(scards):
     """
-    Return dictionary with keys -- number types and values -- list of numbers used in the input file.
+    Return dictionary with keys -- number types and values -- list of numbers
+    used in the input file.
     """
     r = {}
     for c in scards:
         for v, t in c.values:
-            if not r.has_key(t):
+            if t not in r:
                 r[t] = []
             r[t].append(v)
     return r
@@ -128,22 +135,22 @@ def get_numbers(scards):
 def get_indices(scards):
     """
     Return a dictionary that can be used as an argument for the LikeFunction
-    class. 
-    
+    class.
+
     This dictionary describes mapping that maps cell, surface, material and
     universe numbers to their indices -- as they appear in the MCNP input file
     orig.
     """
     # get list of numbers as they appear in input
-    d = get_numbers(scards) 
+    d = get_numbers(scards)
 
-    res = {} # resulting dictionaries of the form number: index
+    res = {}  # resulting dictionaries of the form number: index
     for t, vl in d.items():
         di = {}
-        cin = 1 # all indices start from 1
+        cin = 1  # all indices start from 1
         for v in vl:
-            if not v in di.keys():
-                if v != 0:           # v == 0 excluded to skip renumbering of u=0 and m=0
+            if v not in di:
+                if v != 0:  # v == 0 excluded to skip renumbering of u=0 and m=0
                     di[v] = cin
                     cin += 1
                 else:
@@ -159,8 +166,8 @@ def _get_ranges_from_set(nn):
             # for float elements of nn only one range, (min, max), is returned
             yield (nnl[0], nnl[-1])
         else:
-            n1 = nnl.pop(0) # start of 1-st range
-            np = n1         # previous item
+            n1 = nnl.pop(0)  # start of 1-st range
+            np = n1          # previous item
             while nnl:
                 n = nnl.pop(0)
                 if np in [n-1, n]:
@@ -172,15 +179,16 @@ def _get_ranges_from_set(nn):
                     np = n
             yield (n1, np)
 
+
 def read_map_file(fname):
     """
-    Read map file and return functions to be used for mapping. 
+    Read map file and return functions to be used for mapping.
 
     Map file format:
 
-        c100--140: +20    # add 20 to all cell numbers from 100 to 140
-        c150: 151         # replace cell 150 with 151
-        c200--300: 400    # add 200 to all cell numbers in the range from 200 to 300 (400 without prefix sign means where the new range starts.
+        c100--140: +20   # add 20 to cells 100 -- 140
+        c150: 151        # replace cell 150 with 151
+        c200--300: 400   # add 200 to cells 200 -- 300 (400 without prefix sign means where the new range starts.
         c: 50            # default cell offset. If not specified, it is 0.
     """
     # type short names and accepted types:
@@ -192,18 +200,18 @@ def read_map_file(fname):
 
     d = {}
     for k in td.keys():
-        d[td[k]] = [0, []] # default dn and list of ranges.
+        d[td[k]] = [0, []]  # default dn and list of ranges.
     with open(fname, 'r') as f:
         for l in f:
             ll = l.lower().lstrip()
             if ll and ll[0] in td.keys() and ':' in ll:
                 t = td[ll[0]]
                 rs, os = ll[1:].split(':')
-                rs = rs.replace(' ', '') # remove spaces from left part
-                os = os.split()[0]       # take into account only first entry in the right part. 
+                rs = rs.replace(' ', '')  # remove spaces from left part
+                os = os.split()[0]        # consider only 1st entry in the right part.
                 if rs == '':
                     # this is line with default dn. os is always an increment.
-                    d[t][0] = int(os) 
+                    d[t][0] = int(os)
                 else:
                     if '--' in rs:
                         # there are two entries in the range definition.
@@ -218,12 +226,7 @@ def read_map_file(fname):
                     else:
                         dn = int(os) - n1
                     d[t][1].append((n1, n2, dn))
-    return d 
-
-
-
-
-
+    return d
 
 
 if __name__ == '__main__':

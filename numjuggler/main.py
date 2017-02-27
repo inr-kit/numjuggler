@@ -17,6 +17,11 @@ file (the 1-st cell becomes number 1, etc)
 
 help_s = '{} number increment, similar to "-c"'
 
+help_m = """
+File, containing descrption of mapping. When specified, options "-c", "-s", "-m"
+and "-u" are ignored.
+"""[1:]
+
 dhelp = {}
 dhelp['mode'] = """
 EXECUTION MODES
@@ -66,13 +71,14 @@ uexp:
     have explicit zero universes, they can be renumbered using the -u or --map
     option in subsequent runs.
 
-    Another universe can be specified with the -u option. IN this case, the whole option should
-    be specified, i.e. -u ' u=1 '
+    Another universe can be specified with the -u option. IN this case, the
+    whole option should be specified, i.e. -u ' u=1 '
 
     The -c option can be used to specify cells to be handled. Examples:
 
          -c "1 --150" -- add universe option only to these cells.
-         -c "!2" -- do not add universe to cell 2, even if it safisfies above criteria
+         -c "!2" -- do not add universe to cell 2, even if it safisfies above
+         criteria
 
 split:
     Split input into several files containing separate blocks. Output is written
@@ -85,13 +91,15 @@ split:
         inp.5data
 
     where inp is replaced by the name of the ofiginal input file. Note that
-    separate blocks do not contain blank lines. In order to concatenate block files
-    together into a single input, one needs to insert blank lines:
+    separate blocks do not contain blank lines. In order to concatenate block
+    files together into a single input, one needs to insert blank lines:
 
     > numjuggler --mode split inp_
     > cat inp_.[1-5]* > inp2_          # inp2_ lacks all blank lines
     > echo '' > bl
-    > cat inp_.1* bl inp_.2* bl inp_.3* bl inp_.4* bl inp_.5* bl > inp3_ # inp3_ is equivalent to inp_
+    > cat inp_.1* bl inp_.2* bl inp_.3* bl inp_.4* bl inp_.5* bl > inp3_
+
+    After these commands, file `inp3_` is equivalent to `inp_`.
 
 
 mdupl:
@@ -112,10 +120,11 @@ msimp:
 
 
 extr:
-    Extract the cell specified in the -c keyword together with materials, surfaces
-    and transformations.
+    Extract the cell specified in the -c keyword together with materials,
+    surfaces and transformations.
 
-    If the first entry of the -c keyword is `!`, extract all but the cells specified after.
+    If the first entry of the -c keyword is `!`, extract all but the cells
+    specified after.
 
 
 
@@ -124,7 +133,8 @@ nogq:
     cases this improves precision of cylinder's representations and helps to
     fix lost particle errors.
 
-    Transformation card numbering starts from the number specified in -t argument.
+    Transformation card numbering starts from the number specified in -t
+    argument.
 
     If -c is given and differs from "0", the original GQ cards remain in the
     input, but commented out.  Otherwise (i.e. by default), they disappear from
@@ -150,19 +160,22 @@ fillempty:
     -m argument, cells filled with this material are filled with N, instead of
     void cells.
 
-    When a file is given with the --map option, a list of cells is read from this file,
-    and the "fill=" is added to these cells only, independent on cell's importance or material.
+    When a file is given with the --map option, a list of cells is read from
+    this file, and the "fill=" is added to these cells only, independent on
+    cell's importance or material.
 
-    UPD: the content of -u option is copied into the input file as is. For example, to specify
-    transformation in-place: -u '*fill=1 (0 0 5)'.
+    UPD: the content of -u option is copied into the input file as is. For
+    example, to specify transformation in-place: -u '*fill=1 (0 0 5)'.
 
 
 matinfo:
-    Output information about how materials are used: for each material list of cells with density and universe.
+    Output information about how materials are used: for each material list of
+    cells with density and universe.
 
 
 uinfo:
-    For each universe defined in the input file, return a list of cells in this universe.
+    For each universe defined in the input file, return a list of cells in this
+    universe.
 
 
 impinfo:
@@ -170,7 +183,8 @@ impinfo:
 
 
 sinfo:
-    For each surface defined in the input file, return the list of cells where it is used.
+    For each surface defined in the input file, return the list of cells where
+    it is used.
 
     At the end list all used types of surfaces.
 
@@ -181,7 +195,8 @@ vsource:
 
     --mode vsource -c "10 20 -10 10 -20 20"
 
-    will generate planar sources for the box 10 < x < 20, -10 < y < 10, -20 < z < 20.
+    will generate planar sources for the box 10 < x < 20, -10 < y < 10 and
+    -20 < z < 20.
 
     --mode vsource -s 100
 
@@ -212,18 +227,19 @@ addgeom:
     existing geometry definition, the rest after the comma will be appended
     after the existing geometry definition.
 
-    If the cell number is not followed by any entry (including the comma), this cell
-    will be removed from the resulting input file. In the above example, cell 135 will
-    be removed.
+    If the cell number is not followed by any entry (including the comma), this
+    cell will be removed from the resulting input file. In the above example,
+    cell 135 will be removed.
 
 
 merge:
-    put two input files into a single file. Second input file is given in the -m option.
+    put two input files into a single file. Second input file is given in the -m
+    option.
 
 
 remu:
-    Remove all cells that belong to the universe specified in the -u option. SUrfaces that
-    are used only for these cells are removed also.
+    Remove all cells that belong to the universe specified in the -u option.
+    SUrfaces that are used only for these cells are removed also.
 
 
 zrotate:
@@ -322,22 +338,22 @@ INVOCATION EXAMPLES
 
 Get extended help:
 
-  > mcnp.juggler -h mode
-  > mcnp.juggler -h map
+  > numjuggler -h mode
+  > numjuggler -h map
 
 
 Prepare model for insertion into another as universe 10:
 
-  > mcnp.juggler --mode uexp inp > inp1     # add u=0 to real-world cells
+  > numjuggler --mode uexp inp > inp1     # add u=0 to real-world cells
   > echo "u0: 10 " > map.txt                # generate mapping file
-  > mcnp.juggler --map map.txt inp1 > inp2  # replace u=0 with u=10
-  > mcnp.juggler --mode wrap inp2 > inp3    # ensure all lines shorter 80 chars.
+  > numjuggler --map map.txt inp1 > inp2  # replace u=0 with u=10
+  > numjuggler --mode wrap inp2 > inp3    # ensure all lines shorter 80 chars.
 
 
 Rename all cells and surfaces by adding 1000:
 
-  > mcnp.juggler -s 1000 -c 1000 inp > inp1
-  > mcnp.juggler --mode wrap inp1 > inp2    # ensure all lines shorter 80 chars.
+  > numjuggler -s 1000 -c 1000 inp > inp1
+  > numjuggler --mode wrap inp1 > inp2    # ensure all lines shorter 80 chars.
 
 
 Rename all cells and surfaces by incrementing numbers as they appear in the
@@ -345,11 +361,11 @@ input file. To check renumbering, store log and use it on the next step as the
 map file to perform the reverse renumbering.  Finally, remove extra spaces from
 the resulting file and original one, in order to simplify visual comparison:
 
-  > mcnp.juggler -c i -s i --log i1.log i1 > i2
-  > mcnp.juggler --map i1.log i2 > i3       # apply log as map file for reverse renubmering
-  > mcnp.juggler --mode rems i1 > c1        # remove extra spaces from original input
-  > mcnp.juggler --mode rems i3 > c3        # and from result of reverse renumbering
-  > vimdiff c1 c3                           # compare files visually
+  > numjuggler -c i -s i --log i1.log i1 > i2
+  > numjuggler --map i1.log i2 > i3  # apply log as map for reverse renubmering
+  > numjuggler --mode rems i1 > c1   # remove extra spaces from original input
+  > numjuggler --mode rems i3 > c3   # and from result of reverse renumbering
+  > vimdiff c1 c3                      # compare files visually
 
 
 """
@@ -387,21 +403,47 @@ Specify {} after -h for additional help.
 
 
 def main():
-    p = ap.ArgumentParser(prog='numjuggler', description=descr, epilog=epilog) # formatter_class=ap.RawTextHelpFormatter)
+    p = ap.ArgumentParser(prog='numjuggler', description=descr, epilog=epilog)
     p.add_argument('inp', help='MCNP input file')
-    p.add_argument('-c', help=help_c, type=str, default='0')
-    p.add_argument('-s', help=help_s.format('Surface'), type=str, default='0')
-    p.add_argument('-m', help=help_s.format('Material'), type=str, default='0')
-    p.add_argument('-u', help=help_s.format('Universe'), type=str, default='0')
-    p.add_argument('-t', help=help_s.format('Transformation'), type=str, default='0')
-    p.add_argument('--map', type=str, help='File, containing descrption of mapping. When specified, options "-c", "-s", "-m" and "-u" are ignored.', default='')
-    p.add_argument('--mode', type=str, help='Execution mode, "renum" by default', choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'remc', 'split', 'mdupl', 'matan', 'sdupl', 'msimp', 'extr', 'nogq', 'count', 'nofill', 'matinfo', 'uinfo', 'impinfo', 'fillempty', 'sinfo', 'vsource', 'tallies', 'addgeom', 'merge', 'remu', 'zrotate', 'annotate', 'getc'], default='renum')
-    p.add_argument('--debug', help='Additional output for debugging', action='store_true')
-    p.add_argument('--log', type=str, help='Log file.', default='')
+    p.add_argument('-c', help=help_c,
+                   type=str,
+                   default='0')
+    p.add_argument('-s', help=help_s.format('Surface'),
+                   type=str,
+                   default='0')
+    p.add_argument('-m', help=help_s.format('Material'),
+                   type=str,
+                   default='0')
+    p.add_argument('-u', help=help_s.format('Universe'),
+                   type=str,
+                   default='0')
+    p.add_argument('-t', help=help_s.format('Transformation'),
+                   type=str,
+                   default='0')
+    p.add_argument('--map', help=help_m,
+                   type=str,
+                   default='')
+    p.add_argument('--mode', help='Execution mode, "renum" by default',
+                   type=str,
+                   choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'remc',
+                            'split', 'mdupl', 'matan', 'sdupl', 'msimp', 'extr',
+                            'nogq', 'count', 'nofill', 'matinfo', 'uinfo',
+                            'impinfo', 'fillempty', 'sinfo', 'vsource',
+                            'tallies', 'addgeom', 'merge', 'remu', 'zrotate',
+                            'annotate', 'getc'],
+                   default='renum')
+    p.add_argument('--debug', help='Additional output for debugging',
+                   action='store_true')
+    p.add_argument('--log', help='Log file.',
+                   type=str,
+                   default='')
 
     # parse help option in another parser:
     ph = ap.ArgumentParser(add_help=False)
-    ph.add_argument('-h', help='Print help and exit', nargs='?', default='', const='gen')
+    ph.add_argument('-h', help='Print help and exit',
+                    nargs='?',
+                    default='',
+                    const='gen')
     harg, clo = ph.parse_known_args()
     if harg.h:
         if harg.h == 'gen':
@@ -440,10 +482,11 @@ def main():
             else:
                 types = ['cel', 'sur', 'mat', 'u', 'tal', 'tr']
             for t in types:
-                if t[0] <> '#': # for meaning of '#' see parser.
+                if t[0] != '#':  # for meaning of '#' see parser.
                     nset = set(d.get(t, []))
-                    print '-'* 40, t, len(nset)
-                    print '-'* 20, t, ' list', ' '.join(map(str, rin.shorten(sorted(nset))))
+                    print '-' * 40, t, len(nset)
+                    print '-' * 20, t, ' list',
+                    print ' '.join(map(str, rin.shorten(sorted(nset))))
                     rp = None
                     for r1, r2 in mn._get_ranges_from_set(nset):
                         print '{}{:>3s}'.format(indent, t[0]),
@@ -451,7 +494,7 @@ def main():
                             rs = ' {}'.format(r1)
                         else:
                             rs = ' {} -- {}'.format(r1, r2)
-                        if rp != None:
+                        if rp is not None:
                             fr = '{}'.format(r1 - rp - 1)
                         else:
                             fr = ''
@@ -463,30 +506,12 @@ def main():
             for c in cards:
                 c.get_values()
             d = mn.get_numbers(cards)
-        # elif args.mode == 'tallies':
-        #     # generate tally cards for volume in each cell
-        #     n = int(args.s) # as tally number
-        #     u = args.u # specify cells of particular universe only
-        #     if args.m != '0':
-        #         fmt = args.m
-        #     else:
-        #         fmt = '{}'
-        #     cset = set()
-        #     for c in cards:
-        #         c.get_values()
-        #         if c.ctype == mp.CID.cell:
-        #             cu = c.get_u()
-        #             if u == '_' or cu == int(u) or (cu == None and int(u) == 0):
-        #                 cset.add(c.name)
-        #         elif c.ctype ==  mp.CID.surface:
-        #             break
-        #     print 'f{}:n {}'.format(n, fmt.format(' '.join(map(str, rin.shorten(sorted(cset))))))
-        #     print 'sd{} 1 {}r'.format(n, len(cset)-1)
 
         elif args.mode == 'tallies':
-            # New version: tally number and universes should be specified in the format string passed via -m argument.
-            # -m must be present and have form: 'f4:n (u4 < u5)', where uN -- placeholders for lists of cells
-            # that belong to universe N.
+            # New version: tally number and universes should be specified in the
+            # format string passed via -m argument.  -m must be present and have
+            # form: 'f4:n (u4 < u5)', where uN -- placeholders for lists of
+            # cells that belong to universe N.
 
             import re
             r = re.compile('(u)(\d+)')
@@ -498,14 +523,14 @@ def main():
                 ss = s[0] + s[1]
                 u = int(s[1])
                 csets[u] = set()
-                fmt = fmt.replace(ss,'{' + ss + '}', 1)
+                fmt = fmt.replace(ss, '{' + ss + '}', 1)
                 ulst += [u]
 
             for c in cards:
                 c.get_values()
                 if c.ctype == mp.CID.cell:
                     cu = c.get_u()
-                    if cu == None:
+                    if cu is None:
                         cu = 0
                     if cu in csets.keys():
                         csets[cu].add(c.name)
@@ -521,13 +546,12 @@ def main():
 
             # SD card. Requires tally number and number of cells
             nt = fmt.split(':')[0][1:]
-            nc = len(csets[ulst[0]]) # number of cells
+            nc = len(csets[ulst[0]])  # number of cells
             print 'sd{} 1 {}r'.format(nt, nc - 1)
             print 'fc{} '.format(nt),
             for u in ulst:
                 print len(csets[u]),
             print
-
 
         elif args.mode == 'addgeom':
             # add stuff to geometry definition of cells.
@@ -535,7 +559,7 @@ def main():
             # Get info from the --map file:
             extr = {}
             rem = set()
-            if ',' in args.m :
+            if ',' in args.m:
                 ds1, ds2 = args.m.split(',')
             else:
                 ds1 = ''
@@ -546,7 +570,8 @@ def main():
                     if l:
                         tokens = l.split(None, 1)
                         if len(tokens) == 1:
-                            # special case: cell c should be removed from the resulting input.
+                            # special case: cell c should be removed from the
+                            # resulting input.
                             rem.add(int(tokens[0]))
                         else:
                             c, s = tokens
@@ -575,9 +600,10 @@ def main():
                     print c.card(),
 
         elif args.mode == 'merge':
-            # Merge treats models as the main one and an additional one.
-            # Title of the resulting model -- from the main model, or user specified by -t option.
-            # Blocks of the additional model are denoted by user-specified comments, or by "c numjuggler title"
+            # Merge treats models as the main one and an additional one.  Title
+            # of the resulting model -- from the main model, or user specified
+            # by -t option.  Blocks of the additional model are denoted by
+            # user-specified comments, or by "c numjuggler title"
 
             # get cards of the second input
             cards2 = list(mp.get_cards(args.m, debuglog))
@@ -585,10 +611,11 @@ def main():
             blk1 = mp.get_blocks(cards)
             blk2 = mp.get_blocks(cards2)
 
-            # The first input is used as the main one.  Blocks of the second input are inserted at the end,
-            # surrounded by comments.
+            # The first input is used as the main one.  Blocks of the second
+            # input are inserted at the end, surrounded by comments.
 
-            # Message -- from the 1-st input if exists, otherwise -- from the second.
+            # Message -- from the 1-st input if exists, otherwise -- from the
+            # second.
             if mp.CID.message in blk1.keys():
                 mb = blk1[mp.CID.message]
             elif mp.CID.message in blk2.keys():
@@ -610,25 +637,13 @@ def main():
 
             # Comments, denoting blocks of the additional model:
             if args.c == "0":
-                # default. Use the additional model's title
-                t2 = blk2[mp.CID.title][0]  # Assumed that both inputs have title cards, i.e. not continuation input files.
-                cmnt = 'c {} {} cards ' + '"{}"'.format(t2.card()[:-1])         # emphasize second title
+                # default. Use the additional model's title.  Assumed that both
+                # inputs have title cards, i.e. not continuation input files.
+                t2 = blk2[mp.CID.title][0]
+                # emphasize second title
+                cmnt = 'c {} {} cards ' + '"{}"'.format(t2.card()[:-1])
             else:
                 cmnt = 'c {} {} cards ' + args.c
-
-            ## # Title -- from the 1-st input, and add comment about merging
-            ## t1 = blk1[mp.CID.title][0]
-            ## t2 = blk2[mp.CID.title][0]  # Assumed that both inputs have title cards, i.e. not continuation input files.
-            ## t2 = '"{}"'.format(t2.card()[:-1])         # emphasize second title
-            ## print t1.card(),
-
-            ## # The original title card is followed by user-specified message. If no, by the title of the 2-nd input:
-            ## if args.c == '0':
-            ##     comment = t2
-            ## else:
-            ##     comment = repr(args.c)
-
-            ## print 'c numjuggler merged with {}'.format(t2)
 
             # Cells, surfaces and data:
             for t in [mp.CID.cell, mp.CID.surface, mp.CID.data]:
@@ -643,11 +658,9 @@ def main():
                             flg = True
                             break
                     if flg:
-                        # print 'c numjuggler: start {} block from {}'.format(mp.CID.get_name(t), t2)
                         print cmnt.format('start', mp.CID.get_name(t))
                         for c in blk2[t]:
                             print c.card(),
-                        # print 'c numjuggler: end {} block from {}'.format(mp.CID.get_name(t), t2)
                         print cmnt.format('end', mp.CID.get_name(t))
 
                 if t != mp.CID.data:
@@ -663,21 +676,27 @@ def main():
             # Define function that filters cells to be checked:
             if args.c == "0":
                 # default. Check all cells.
-                cfunc = lambda n: True
+                def cfunc(n):
+                    return True
             elif "!" in args.c:
                 # Check only cells not mentioned in -c
                 cset = set(rin.expand(args.c.replace("!", " ").split()))
-                cfunc = lambda n: n not in cset
+
+                def cfunc(n):
+                    return n not in cset
             else:
                 # Check only cells  mentioned in -c
                 cset = set(rin.expand(args.c.replace("!", " ").split()))
-                cfunc = lambda n: n in cset
+
+                def cfunc(n):
+                    return n in cset
 
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     c.get_values()
-                    if cfunc(c.name) and 'u' not in map(lambda t: t[1], c.values):
-                        c.input[-1] += N # ' u=0'
+                    if (cfunc(c.name) and
+                       'u' not in map(lambda t: t[1], c.values)):
+                        c.input[-1] += N  # ' u=0'
                 print c.card(),
 
         elif args.mode == 'wrap':
@@ -696,42 +715,6 @@ def main():
                 print c.card(),
 
         elif args.mode == 'split':
-            # # old approach:
-            # # split input file into blocks
-            # fp = {}
-            # fp[mp.CID.message] = open(args.inp + '.1message', 'w')
-            # fp[mp.CID.title]   = open(args.inp + '.2title', 'w')
-            # fp[mp.CID.cell]    = open(args.inp + '.3cells', 'w')
-            # fp[mp.CID.surface] = open(args.inp + '.4surfaces', 'w')
-            # fp[mp.CID.data]    = open(args.inp + '.5data', 'w')
-            # cct = cards[0].ctype
-            # cmnt = None
-            # for c in cards:
-            #     # blank line is attached to the end of block.
-            #     # Comment is printed before the next card.
-            #     if c.ctype > 0:
-            #         # where to print is defined by card ctype:
-            #         fff = fp[c.ctype]
-            #     if c.ctype == mp.CID.comment:
-            #         # remember comment to print before next meaningful card
-            #         cmnt = c
-            #     else:
-            #         if cmnt:
-            #             print >> fff, cmnt.card(),
-            #             cmnt = None
-            #         if c.ctype != mp.CID.blankline:
-            #             # do not print blank lines
-            #             print >> fff, c.card(),
-            # # do not forget the last comment
-            # if cmnt:
-            #     print >> fff, cmnt.card(),
-
-
-            # for fff in fp.values():
-            #     fff.close()
-
-            # new approach:
-
             blocks = mp.get_blocks(cards)
             for k, cl in blocks.items():
                 if cl:
@@ -765,7 +748,6 @@ def main():
                 print i, m
                 i += 1
 
-
         elif args.mode == 'mdupl':
             # remove duplicate material cards, if they are equal.
 
@@ -785,7 +767,7 @@ def main():
             us = {}
 
             #  surface types coefficients that can only be proportional
-            pcl =  {
+            pcl = {
                     'p': (0,),
                     'sq': (0, 7),
                     'gq': (0,)
@@ -793,15 +775,18 @@ def main():
             for c in cards:
                 c.get_values()
                 if c.ctype == mp.CID.surface:
-                    # compare this surface with all previous and if unique, add to dict
-                    # print '--surface', c.card(),
+                    # compare this surface with all previous and if unique, add
+                    # to dict
                     ust = us.get(c.stype, {})
                     if ust == {}:
                         us[c.stype] = ust
                     for sn, s in ust.items():
                         if s.stype == c.stype:
-                            # current surface card and s have the same type. Compare coefficients:
-                            if mp.are_close_lists(s.scoefs, c.scoefs, pci=pcl.get(c.stype, [])):
+                            # current surface card and s have the same type.
+                            # Compare coefficients:
+                            if mp.are_close_lists(s.scoefs,
+                                                  c.scoefs,
+                                                  pci=pcl.get(c.stype, [])):
                                 print c.card(comment=False)
                                 print s.card(comment=False)
                                 print
@@ -820,7 +805,8 @@ def main():
                     c.get_values()
                     if c.dtype == 'Mn':
                         inp = []
-                        inp.append(c.input[0].replace('} ', '} 1001 1.0 $ msimpl ', 1))
+                        inp.append(c.input[0].replace('} ',
+                                                      '} 1001 1.0 $ msimpl ', 1))
                         for i in c.input[1:]:
                             inp.append('c msimpl ' + i)
                         c.input = inp
@@ -828,7 +814,8 @@ def main():
 
         elif args.mode == 'remu':
             if args.u[0] == '!':
-                # -u option starts with !. In this case, remove all other universes.
+                # -u option starts with !. In this case, remove all other
+                # universes.
                 iflag = True
                 args.u = args.u[1:]
             else:
@@ -848,7 +835,7 @@ def main():
                     cset.add(int(v))
 
             # get card values
-            uset = set() # in case universes require inversion
+            uset = set()  # in case universes require inversion
             for c in cards:
                 if c.ctype in (mp.CID.cell, mp.CID.surface, mp.CID.data):
                     c.get_values()
@@ -875,7 +862,9 @@ def main():
                     pass
                 elif c.ctype == mp.CID.surface and c.name not in sset:
                     pass
-                elif c.ctype == mp.CID.data and c.dtype == 'Mn' and c.values[0][0] not in mset:
+                elif (c.ctype == mp.CID.data and
+                      c.dtype == 'Mn' and
+                      c.values[0][0] not in mset):
                     print 'c qqq', repr(c.values[0][0])
                     pass
                 else:
@@ -898,12 +887,14 @@ def main():
 
             # new transformation number:
             trn = args.t
-            trcard = '*tr{} 0 0 0 {} {} 90   {} {} 90   90 90 0'.format(trn, ag, ag-90, 90+ag, ag)
+            trcard = '*tr{} 0 0 0 {} {} 90   {} {} 90   90 90 0'.format(
+                trn, ag, ag-90, 90+ag, ag)
             # change all tr cards and surface cards:
             for c in cards:
                 if c.ctype == mp.CID.surface:
                     c.get_values()
-                    # Surface parameters are not parsed, only surface number and transformation.
+                    # Surface parameters are not parsed, only surface number and
+                    # transformation.
                     if len(c.values) == 1:
                         # surface has no transformation. Add the new one
                         inpt = '\n'.join(c.input)
@@ -913,21 +904,26 @@ def main():
                 if c.ctype == mp.CID.data:
                     c.get_values()
                     if c.dtype == 'TRn':
-                        # put new tr card just before the 1-st tr card in the input:
+                        # put new tr card just before the 1-st tr card in the
+                        # input:
                         if trcard:
                             print trcard
                             trcard = None
-                        # apply changes, assuming that tr card contains all 12 entries:
+                        # apply changes, assuming that tr card contains all 12
+                        # entries:
                         o = Vector3(car=map(lambda v: v[0], c.values[1:4]))
                         o.t += ar
                         c.values[1] = (o.x, 'float')
                         c.values[2] = (o.y, 'float')
                         c.values[3] = (o.z, 'float')
+
+                        def e1(v):
+                            return v[0]
                         if c.unit == '':
                             # rotation matrix contains cos
-                            b1 = Vector3(car=map(lambda v: v[0], c.values[4:7]))
-                            b2 = Vector3(car=map(lambda v: v[0], c.values[7:10]))
-                            b3 = Vector3(car=map(lambda v: v[0], c.values[10:13]))
+                            b1 = Vector3(car=map(e1, c.values[4:7]))
+                            b2 = Vector3(car=map(e1, c.values[7:10]))
+                            b3 = Vector3(car=map(e1, c.values[10:13]))
                             b1.t += ar
                             b2.t += ar
                             b3.t += ar
@@ -942,10 +938,12 @@ def main():
                             c.values[12] = (b3.z, 'float')
                         else:
                             # rotation matrix contains angles in grad.
-                            b1, b2, b3, b4, b5, b6, b7, b8, b9 = map(lambda v: v[0], c.values[4:13])
+                            b1, b2, b3, b4, b5, b6, b7, b8, b9 = map(e1, c.values[4:13])
 
-                            # Assume that it already describes rotation around z axis
-                            assert b3 == 90 and b6 == 90 and b7 == 90 and b8 == 90 and b9 == 0
+                            # Assume that it already describes rotation around z
+                            # axis
+                            assert (b3 == 90 and b6 == 90 and b7 == 90 and
+                                    b8 == 90 and b9 == 0)
 
                             b1 += ag
                             b2 += ag
@@ -958,9 +956,9 @@ def main():
 
                 print c.card(),
 
-
         elif args.mode == 'annotate':
-            # Read text from map file, add "c" to each line and put after the title.
+            # Read text from map file, add "c" to each line and put after the
+            # title.
             if args.c == "0":
                 # default commenting string:
                 cs = 'c '
@@ -968,14 +966,13 @@ def main():
                 # user-specified commenting string:
                 cs = args.c
 
-            txt = map( lambda l: cs + l, open(args.map).readlines())
+            txt = map(lambda l: cs + l, open(args.map).readlines())
 
             for c in cards:
                 print c.card(),
                 if c.ctype == mp.CID.title:
                     for l in txt:
-                        print l,   # readlines() method returns lines with \n at the end
-
+                        print l,   # readlines() method returns lines with \n
 
         elif args.mode == 'getc':
             # Extract comments that take more than 10 lines:
@@ -993,9 +990,10 @@ def main():
                         print ccc,
 
         elif args.mode == 'extr':
-            # extract cell specified in -c keyword and necessary materials, and surfaces.
+            # extract cell specified in -c keyword and necessary materials, and
+            # surfaces.
             cset = set()
-            flag = '' # can be '!'
+            flag = ''  # can be '!'
             if args.c != '0':
                 if '!' in args.c:
                     args.c = args.c.replace('!', ' ')
@@ -1020,22 +1018,22 @@ def main():
                     if c.ctype == mp.CID.cell and c.get_u() == uref:
                         cset.add(c.name)
 
-            # '!' means that the specified cells should NOT be extracted, but all other.
+            # '!' means that the specified cells should NOT be extracted, but
+            # all other.
             if flag == '!':
                 cset = aset.difference(cset)
             if not cset:
                 print "No cells to extract are specified"
                 raise Exception
 
-
             # first, get all surfaces needed to represent the cn cell.
-            sset = set() # surfaces
-            mset = set() # material
-            tset = set() # transformations
-            uset = set() # universes that fill cells of cset
-            fset = set() # universes that the cells of cset belong to.
-            Uset = set() # set of universes, parets belong to.
-            pset = set() # parent cells, i.e. cells that are filled with universes from fset.
+            sset = set()  # surfaces
+            mset = set()  # material
+            tset = set()  # transformations
+            uset = set()  # universes that fill cells of cset
+            fset = set()  # universes that the cells of cset belong to.
+            Uset = set()  # set of universes, parets belong to.
+            pset = set()  # parent cells, ie. cells filled with u-s from fset.
 
             # first run through cards: define filling
             for c in cards:
@@ -1104,24 +1102,24 @@ def main():
                     if blk == mp.CID.cell:
                         print
                         blk = c.ctype
-                    if  c.name in sset:
+                    if c.name in sset:
                         print c.card(),
-                if c.ctype == mp.CID.data :
+                if c.ctype == mp.CID.data:
                     if blk != c.ctype:
                         print
                         blk = c.ctype
                     if c.dtype == 'Mn' and c.values[0][0] in mset:
                         print c.card(),
-                    if c.dtype == 'TRn':#  and c.values[0][0] in tset:
+                    if c.dtype == 'TRn':  # and c.values[0][0] in tset:
                         print c.card(),
 
         elif args.mode == 'nogq':
-            from numjuggler import nogq
             try:
                 # try because nogq requires numpy.
                 from numjuggler import nogq
             except ImportError:
-                print "Numpy package is required for --mode nogq but cannot be found. Install it with "
+                print "Numpy package is required for --mode nogq but cannot "
+                print "be found. Install it with "
                 print ""
                 print " > pip install numpy"
                 raise
@@ -1143,9 +1141,12 @@ def main():
                         p = nogq.get_gq_params(' '.join(c.input))
                         a2, g, k = nogq.get_k(p)
                         if cflag:
-                            crd = crd[:-1] + '$ a^2={:12.6e} c={:12.6e}\n'.format(a2, g + a2)
+                            crd = (crd[:-1] +
+                                   '$ a^2={:12.6e} c={:12.6e}\n'.format(a2,
+                                                                        g + a2))
                         if abs((g + a2) / a2) < 1e-6:
-                            # this is a cylinder. Comment original card and write another one
+                            # this is a cylinder. Comment original card and
+                            # write another one
                             R, x0, i, j = nogq.cylinder(p, a2, g, k)
                             # add transformation set
                             tr = tuple(i) + tuple(j) + tuple(k)
@@ -1158,10 +1159,13 @@ def main():
                                 trd[trn] = tr
                             # replace surface card
                             if cflag:
-                                crd = 'c ' + '\nc '.join(c.card().splitlines()) + '\n'
+                                crd = ('c ' +
+                                       '\nc '.join(c.card().splitlines()) +
+                                       '\n')
                             else:
                                 crd = ''
-                            crd += '{} {} c/z {:15.8e} 0 {:15.8e}\n'.format(c.name, trn + trn0, x0, R)
+                            crd += '{} {} c/z {:15.8e} 0 {:15.8e}\n'.format(
+                                c.name, trn + trn0, x0, R)
                 print crd,
                 if trd and c.ctype == mp.CID.blankline:
                     # this is blankline after surfaces. Put tr cards here
@@ -1174,13 +1178,17 @@ def main():
             # take the maximal number of surfaces from -s:
             Nmax = int(args.s)
             if Nmax == 0:
-                Nmax = 100 # default max value.
-            print ('{:>10s}'*5).format('Cell', 'Line', 'all', 'unique', '>{}'.format(Nmax))
-            sc = 0 # cell counter
-            sa = 0 # all surfaces counter
-            su = 0 # unique surface counter
-            ma = 0 # maximal number of all surfaces
-            mu = 0 # maximal number of unique surfaces
+                Nmax = 100  # default max value.
+            print ('{:>10s}'*5).format('Cell',
+                                       'Line',
+                                       'all',
+                                       'unique',
+                                       '>{}'.format(Nmax))
+            sc = 0  # cell counter
+            sa = 0  # all surfaces counter
+            su = 0  # unique surface counter
+            ma = 0  # maximal number of all surfaces
+            mu = 0  # maximal number of unique surfaces
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     c.get_values()
@@ -1211,7 +1219,8 @@ def main():
             # remove all fill= keywords from cell cards.
             print ' Mode --mode nofill is not implemented yet.'
 
-            # First loop: find and remove all FILL keywords. Store universes for the second loop.
+            # First loop: find and remove all FILL keywords. Store universes for
+            # the second loop.
             uset = set()
             for c in cards:
                 if c.ctype == mp.CID.cell:
@@ -1226,9 +1235,9 @@ def main():
 
             print 'Universes used for FILL:', uset
 
-
         elif args.mode == 'matinfo':
-            # for each material used in cell cards, output list of cells together with density and universe.
+            # for each material used in cell cards, output list of cells
+            # together with density and universe.
             res = {}
             for c in cards:
                 if c.ctype == mp.CID.cell:
@@ -1250,7 +1259,9 @@ def main():
                 uset = set()
                 for c, d, u in res[m]:
                     uset.add(u)
-                print 'm{} -------------- {} {}'.format(m, len(uset), sorted(uset))
+                print 'm{} -------------- {} {}'.format(m,
+                                                        len(uset),
+                                                        sorted(uset))
 
                 for c, d, u in res[m]:
                     print fmt.format(c, d, u)
@@ -1290,7 +1301,6 @@ def main():
                 for e in rin.shorten(l):
                     print e,
 
-
         elif args.mode == 'impinfo':
 
             if args.m == '0':
@@ -1311,11 +1321,10 @@ def main():
                         c.get_imp(nv)
                     print c.card(),
 
-
         elif args.mode == 'sinfo':
             # first, get the list of surfaces:
             sl = {}
-            st = set() # set of used surface types
+            st = set()  # set of used surface types
             for c in cards:
                 if c.ctype == mp.CID.surface:
                     c.get_values()
@@ -1333,7 +1342,6 @@ def main():
                 print s, t, sorted(cs)
             for s in sorted(st):
                 print s
-
 
         elif args.mode == 'vsource':
 
@@ -1362,9 +1370,9 @@ def main():
                 mx = (x1 + x2)*0.5
                 my = (y1 + y2)*0.5
                 mz = (z1 + z2)*0.5
-                xs =  mx - (dx*0.5 - d)*v
-                ys =  my - (dy*0.5 - d)*v
-                zs =  mz - (dz*0.5 - d)*v
+                xs = mx - (dx*0.5 - d)*v
+                ys = my - (dy*0.5 - d)*v
+                zs = mz - (dz*0.5 - d)*v
                 if u in 'xX':
                     fmt = 'sdef x {:12} y d2  z d3  vec {} dir 1 wgt {}'
                     print fmt.format(xs, '{} 0 0'.format(v), dz*dy)
@@ -1446,24 +1454,23 @@ def main():
                 else:
                     raise ValueError('Wront number of surfaces in -s option')
 
-
         elif args.mode == 'fillempty':
             # add 'FILL =' to all void non-filled cells.
             # N = ' fill={} '.format(args.u)
             N = args.u
             M = int(args.m)
-            cll = [] # list of cell lists to be filled with new u
-            fl = []  # list of new u that fills cells from cll
+            cll = []  # list of cell lists to be filled with new u
+            fl = []   # list of new u that fills cells from cll
             if args.map != '':
                 # read from map list of cells where to insert the fill card
                 for l in open(args.map):
                     if ':' in l:
                         # l contains cell numbers and its filling
                         s1, s2 = l.split(':')
-                        cll.append( rin.expand(s1.split()) )
+                        cll.append(rin.expand(s1.split()))
                         fl.append(s2)
                     else:
-                        cll.append( rin.expand(l.split()))
+                        cll.append(rin.expand(l.split()))
                         fl.append(N)
             if args.c != '0':
                 cll.append(rin.expand(args.c.split()))
@@ -1505,16 +1512,19 @@ def main():
                 else:
                     di = {}
 
-
                 dm = {}
                 for t in ['cel', 'sur', 'mat', 'u', 'tr']:
                     dn = getattr(args, t[0])
                     if dn == 'i':
-                        dm[t] = [None, di[t]] # None to raise an error, when None will be added to an int. (Indexes should be defined to all numbers, thus the default mapping should not be used.
+                        # None to raise an error, when None will be added to an
+                        # int. (Indexes should be defined to all numbers, thus
+                        # the default mapping should not be used.
+                        dm[t] = [None, di[t]]
                     else:
-                        dm[t] = [int(dn), [(0, 0, 0)]] # do not modify zero material
+                        # do not modify zero material
+                        dm[t] = [int(dn), [(0, 0, 0)]]
 
-            mapping = mn.LikeFunction(dm, args.log!='')
+            mapping = mn.LikeFunction(dm, args.log != '')
 
             for c in cards:
                 c.apply_map(mapping)
@@ -1526,4 +1536,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

@@ -4,22 +4,24 @@ Functions for parsing MCNP input files.
 import re
 import warnings
 
+# integer with one prefix character
+re_int = re.compile('\D{0,1}\d+')
 
-# regular expressions
-re_int = re.compile('\D{0,1}\d+')                    # integer with one prefix character
-re_ind = re.compile('\[.+\]', flags=re.DOTALL)       # interior of square brackets for tally in lattices
-re_rpt = re.compile('\d+[ri]', flags=re.IGNORECASE)  # repitition syntax of MCNP input file
-re_prm = re.compile('((imp:n|imp:p|tmp)\s+\S+)')     # imp or tmp parameters in cell card
+# interior of square brackets for tally in lattices
+re_ind = re.compile('\[.+\]', flags=re.DOTALL)
+
+# repitition syntax of MCNP input file
+re_rpt = re.compile('\d+[ri]', flags=re.IGNORECASE)
+
+# imp or tmp parameters in cell card
+re_prm = re.compile('((imp:n|imp:p|tmp)\s+\S+)')
 re_prm = re.compile('[it]mp:*[npe]*[=\s]+\S+', flags=re.IGNORECASE)
 re_prm = re.compile('([it]mp:*[npe]*[=\s]+)(\S+)', flags=re.IGNORECASE)
 
-fmt_d = lambda s: '{{:<{}d}}'.format(len(s))
-fmt_g = lambda s: '{{:<{}g}}'.format(len(s))
-fmt_s = lambda s: '{{:<{}s}}'.fromat(len(s))
-fmt_s = lambda s: '{}'
 
 # If type specifier not given, any data type can be formatted:
-fmt_gen = lambda s: '{{:<{}}}'.format(len(s))
+def fmt_gen(s):
+    return '{' + ':<{}'.format(len(s)) + '}'
 fmt_d = fmt_gen
 fmt_g = fmt_gen
 fmt_s = fmt_gen
@@ -114,14 +116,14 @@ class Card(object):
         self.geom_suffix = ''
 
         # some properties defined on demand
-        ## cell properties
+        # cell properties
         self.__u = -1  # -1 means undefined. None -- not specified in input
         self.__f = -1  # fill
         self.__m = -1  # material
         self.__d = ''  # density
         self.__i = -1  # importances
         self.__cr = -1  # set of reference cells.
-        ## surface properties
+        # surface properties
         self.__st = ''  # '' means undefined.
 
         # Split card to template and meaningful part is always needed. Other
@@ -132,7 +134,9 @@ class Card(object):
     def print_debug(self, comment, key='tihv'):
         d = self.debug
         if d:
-            print >> d, 'Line {}, {} card. {}'.format(self.pos, CID.get_name(self.ctype), comment)
+            print >> d, 'Line {}, {} card. {}'.format(self.pos,
+                                                      CID.get_name(self.ctype),
+                                                      comment)
             if 't' in key:
                 print >> d, '    template:', repr(self.template)
             if 'i' in key:
@@ -153,9 +157,11 @@ class Card(object):
             for c in bad_chars:
                 if c in mline:
                     if self.debug:
-                        self.print_debug('get_input: bad character in input cards', '')
+                        self.print_debug('get_input: bad char in input cards',
+                                         '')
                     else:
-                        raise ValueError('Bad character in input file. Run with --debug option.')
+                        raise ValueError('Bad character in input file. ' +
+                                         'Run with --debug option.')
 
         if self.ctype in (CID.comment, CID.blankline):
             # nothing to do for comments or blanklines:
@@ -164,10 +170,11 @@ class Card(object):
 
         else:
             # TODO: protect { and } in comment parts of the card.
-            tmpl = [] # part of template
-            inpt = [] # input, meaningful parts of the card.
+            tmpl = []  # part of template
+            inpt = []  # input, meaningful parts of the card.
             if mline.split()[0][:2] == 'fc':
-                # this is tally comment. It always in one line and is not delimited by & or $
+                # this is tally comment. It always in one line and is not
+                # delimited by & or $
                 i = mline[:80]
                 t = mline.replace(i, '{}', 1)
                 inpt = [i]
@@ -178,13 +185,15 @@ class Card(object):
                         tmpl.append(l)
                     else:
                         # entries optionally delimited from comments by $ or &
-                        d1 = l.find(' $') # requires that delimiters prefixed with space-
+                        # requires that delimiters prefixed with space
+                        d1 = l.find(' $')
                         d2 = l.find(' &')
                         if -1 < d1 and -1 < d2:
                             # both & and $ in the line. Use the most left
                             d = min(d1, d2)
                         elif d1 == -1 and d2 == -1:
-                            # no delimiters at all, whole line is meaningful except the new-line char
+                            # no delimiters at all, whole line is meaningful
+                            # except the new-line char
                             d = len(l) - 1
                         else:
                             # only one of delimiters is given.
@@ -209,8 +218,8 @@ class Card(object):
         d = {}
 
         # in cell card:
-        if self.ctype == CID.cell: # and 'like' not in inpt:
-            d['~'] = [] # float values in cells
+        if self.ctype == CID.cell:  # and 'like' not in inpt:
+            d['~'] = []  # float values in cells
 
             # Replace material density
             if 'like' not in inpt:
@@ -230,7 +239,6 @@ class Card(object):
                 d['~'].append(s2)
                 inpt = inpt.replace(s1 + s2, s1 + '~', 1)
 
-
         # replace repitition syntax in junks:
         sbl = re_rpt.findall(inpt)
         if sbl:
@@ -238,7 +246,9 @@ class Card(object):
                 inpt = inpt.replace(s, '!', 1)
             d['!'] = sbl
 
-        if self.ctype == CID.data and inpt.lstrip().lower()[0] == 'f' and inpt.lstrip()[1].isdigit():
+        if (self.ctype == CID.data and
+                inpt.lstrip().lower()[0] == 'f' and
+                inpt.lstrip()[1].isdigit()):
             # this is tally card. Hide indexes in square brackets
             sbl = re_ind.findall(inpt)
             if sbl:
@@ -254,7 +264,8 @@ class Card(object):
 
     def get_values(self):
         """
-        Replace integers in the meaningfull part with format specifiers, and populate the `values` attribute.
+        Replace integers in the meaningfull part with format specifiers, and
+        populate the `values` attribute.
         """
         self._protect_nums()
         if self.ctype == CID.cell:
@@ -298,7 +309,6 @@ class Card(object):
             self.__cr = s
             return self.__cr
 
-
     def get_u(self):
         """
         Returns universe, the cells belongs to.
@@ -316,7 +326,6 @@ class Card(object):
             else:
                 self.__u = None
             return self.__u
-
 
     def get_m(self):
         """
@@ -355,10 +364,10 @@ class Card(object):
             self.__d = -100.
             return self.__d
         else:
-            # density entry is hidden in the input and available as the 1-st entry in self.hidden dictionary.
+            # density entry is hidden in the input and available as the 1-st
+            # entry in self.hidden dictionary.
             self.__d = float(self.hidden['~'][0])
             return self.__d
-
 
     def get_f(self, newv=None):
         """
@@ -374,7 +383,7 @@ class Card(object):
             for i in range(len(self.values)):
                 v, t = self.values[i]
                 if t == 'fill':
-                    if newv != None:
+                    if newv is not None:
                         v = newv
                         self.values[i] = (v, t)
                     self.__f = v
@@ -421,26 +430,26 @@ class Card(object):
             self.__i = res
             return self.__i
 
-
-
-
     def remove_fill(self):
         """
         Removes the FILL= keyword of a cell card.
 
         This method must be called after get_values().
         """
-        # Fill card is followed by one universe number and optionally by transformation in parentheses. Optionally,
-        # the `fill` keyword can be prefixed with asterisk
+        # Fill card is followed by one universe number and optionally by
+        # transformation in parentheses. Optionally, the `fill` keyword can be
+        # prefixed with asterisk
 
-        # Two possibilites are here: (1) start from original line and clean out everything related to FILL,
-        # or (2) modify already existing template, values and input. In both cases, the new card should be checked for
+        # Two possibilites are here: (1) start from original line and clean out
+        # everything related to FILL, or (2) modify already existing template,
+        # values and input. In both cases, the new card should be checked for
         # empty lines.
 
-        # Case (2): Modify existing input and values. All content after the FILL keyword is parsed
-        # and thus is given in values, while input provides placefor them. THus, simply replaceing
-        # values with spaces will almost do the job. The remaining part -- the keyword itself that
-        # is presented in input.
+        # Case (2): Modify existing input and values. All content after the FILL
+        # keyword is parsed and thus is given in values, while input provides
+        # placefor them. THus, simply replaceing values with spaces will almost
+        # do the job. The remaining part -- the keyword itself that is presented
+        # in input.
         vals = []  # new values list.
         oldv = self.values[:]
         state = 'before'
@@ -462,25 +471,6 @@ class Card(object):
         self.values = vals
         self.print_debug('remove_fill', 'iv')
         return
-
-    # def card(self, wrap=False, comment=True):
-    #     """
-    #     Wrapper around original card() that removes all tokens with '___' and
-    #     removes in-card empty lines.
-    #     """
-    #     c = self._card(wrap, comment)
-
-    #     # remove '___' places:
-    #     r = re.compile(' [^ ]*___')
-    #     c = ' '.join(r.split(c)) # TODO will not work for "u = ___"
-
-    #     # remove in-card empty lines:
-    #     res = []
-    #     for l in c.splitlines():
-    #         if len(l.strip()) > 0:
-    #             res.append(l)
-    #     return '\n'.join(res)
-
 
     def card(self, wrap=False, comment=True):
         """
@@ -510,16 +500,15 @@ class Card(object):
             if not comment:
                 return ' '.join(inpt)
 
-
-            if wrap: #  and self.ctype != CID.title:
+            if wrap:  # and self.ctype != CID.title:
                 indent = ' '*5
                 if self.ctype == CID.title:
                     indent = 'c' + indent
                 tparts = re.split('\{.*?\}', self.template)[1:]
                 # print 'wrapped inp', repr(self.template)
                 # print 'wrapped spl', repr(tparts)
-                newt = [''] # new template parts
-                newi = [] # new input parts
+                newt = ['']  # new template parts
+                newi = []    # new input parts
                 self.print_debug('card wrap=True', '')
                 for i, t in zip(inpt, tparts):
                     self.print_debug('    ' + repr(i) + repr(t), '')
@@ -538,12 +527,14 @@ class Card(object):
                                     il.append(i[:k])
                                     tl.append('\n')
                                     i = indent + i[k:]
-                                    self.print_debug('card wrap=True' + repr(il[-1]) + repr(i), '')
+                                    self.print_debug('card wrap=True' +
+                                                     repr(il[-1]) +
+                                                     repr(i), '')
                                     break
                             else:
                                 # there is no proper place to wrap.
-                                self.print_debug('card wrap=True cannot wrap line ' + repr(i), '')
-                                # raise ValueError('Cannot wrap card on line', self.pos)
+                                self.print_debug('Cannot wrap line ' +
+                                                 repr(i), '')
                                 warnings.warn('Cannot wrap card on line {}'.format(self.pos))
                                 break
                         else:
@@ -561,8 +552,6 @@ class Card(object):
         else:
             card = self.template
         return card
-
-
 
     def remove_spaces(self):
         """
@@ -614,6 +603,7 @@ def _parse_geom(geom):
     """
     Parse the geometry part of a cell card.
     """
+    raise NotImplementedError()
     t = geom.split()
     vals = []
     fmts = []
@@ -646,8 +636,8 @@ def _parse_geom(geom):
 
 def _split_cell(input_, self):
     """
-    Replace integers in the meaningful parts of a cell card with format specifiers,
-    and return a list of replaced values together with their types.
+    Replace integers in the meaningful parts of a cell card with format
+    specifiers, and return a list of replaced values together with their types.
 
     """
 
@@ -657,18 +647,15 @@ def _split_cell(input_, self):
     # list easily at \n positions.
     inpt = '\n'.join(input_)
 
-    vals = [] # list of values
-    fmts = [] # value format. It contains digits, thus will be inserted into inpt later.
-    tp = '_'  # temporary placeholder for format specifiers
+    vals = []  # list of values
+    fmts = []  # value format. It has digits, thus inserted into inpt later.
+    tp = '_'   # temporary placeholder for format specifiers
 
     # Parse part before parameters. This is different for usual and like-but
     # syntax.  As result, all entries are replaced in inpt and i, the index
     # where parameter's part starts in inpt, is computed.
 
     if 'like ' in inpt.lower():
-        # raise NotImplementedError()
-        # warnings.warn('Parser for "like but" card, found on line {}, is not implemented'.format(self.pos)) # TODO: self.pos here is undefined.
-        # warnings.warn('Parser for "like but" card is not implemented')
 
         # Get cell name
         t = inpt.split()
@@ -678,14 +665,14 @@ def _split_cell(input_, self):
         fmts.append(fmt_d(js))
 
         # Get reference cell name:
-        t.pop(0) # like
+        t.pop(0)  # like
         js = t.pop(0)
         inpt = inpt.replace(js, tp, 1)
         vals.append((int(js), 'cel'))
         fmts.append(fmt_d(js))
 
         # compute i -- where first param token starts
-        t.pop(0) # but
+        t.pop(0)  # but
         p0 = t.pop(0)
         i = inpt.index(p0)
         parm = [p0] + t
@@ -705,7 +692,7 @@ def _split_cell(input_, self):
         # Density, if specified in cells card, should be allready hidden
         ms = t.pop(0)
         if int(ms) == 0:
-            inpt = inpt.replace(ms, tp+tp , 1)
+            inpt = inpt.replace(ms, tp+tp, 1)
         else:
             inpt = inpt.replace(ms, tp, 1)
             inpt = inpt.replace('~', '~'+tp, 1)
@@ -752,14 +739,13 @@ def _split_cell(input_, self):
         # insert placeholder for geometry suffix
         inpt = inpt.replace(parm[0], '_' + parm[0], 1)
 
-        # At this point all geom entries are replaced in inpt. The rest should work only
-        # with the parm part of inpt. To ensure this, inpt is splitted into inpt_geom and inpt_parm:
+        # At this point all geom entries are replaced in inpt. The rest should
+        # work only with the parm part of inpt. To ensure this, inpt is splitted
+        # into inpt_geom and inpt_parm:
         if parm:
             i = inpt.index(parm[0])
         else:
             i = len(inpt)
-
-
 
     inpt_geom = inpt[:i]
     inpt_parm = inpt[i:]
@@ -773,11 +759,11 @@ def _split_cell(input_, self):
 
     # replace values in parameters block. Values are prefixed with = or space(s)
     # Note that tmp and imp values must be hidden
-    t = ' '.join(parm).replace('=', ' ').split() # get rid of =.
+    t = ' '.join(parm).replace('=', ' ').split()  # get rid of =.
     while t:
         s = t.pop(0)
         # print '_split_cell s: ', repr(s)
-        if s.lower() == 'u': #  or 'fill' in s.lower():
+        if s.lower() == 'u':  # or 'fill' in s.lower():
             vs = t.pop(0)
             vv = int(vs)
             vf = fmt_d(vs)
@@ -787,7 +773,8 @@ def _split_cell(input_, self):
             fmts.append(vf)
         elif 'fill' in s.lower():
             # print '_split_cell: has fill!'
-            # assume that only one integer follows the fill keyword, optionally with transformation in parentheses.
+            # assume that only one integer follows the fill keyword, optionally
+            # with transformation in parentheses.
             vs = t.pop(0)
             # if transformation in parentheses follows the universe number
             # immediately, split this manually:
@@ -801,10 +788,10 @@ def _split_cell(input_, self):
             vals.append((vv, vt))
             fmts.append(vf)
             # TODO fill value can be followed by transformation in parentheses
-            # Fill value can be optionally followed by transformation number of transformation parameters
-            # in parentheses
+            # Fill value can be optionally followed by transformation number of
+            # transformation parameters in parentheses
             if t and '(' in t[0]:
-                vsl = [] # lists of strings, values, formats and types
+                vsl = []  # lists of strings, values, formats and types
                 vvl = []
                 vfl = []
                 vtl = []
@@ -817,7 +804,7 @@ def _split_cell(input_, self):
                 t[0] = t[0].replace('(', '', 1)
 
                 # add entries in parentheses and the closing parenthis
-                while vsl[-1] <> ')':
+                while vsl[-1] != ')':
                     vs = t.pop(0)
                     if ')' in vs:
                         vs = vs.replace(')', '', 1)
@@ -836,8 +823,8 @@ def _split_cell(input_, self):
                         vfl.append(fmt_s(vs))
                         vtl.append('#tparam')
 
-                # check if only one parameter in parenthethes -- it is tr number,
-                # not tr parameter
+                # check if only one parameter in parenthethes -- it is tr
+                # number, not tr parameter
                 if len(vsl) == 3:
                     vvl[1] = int(vvl[1])
                     vfl[1] = fmt_d(vsl[1])
@@ -849,11 +836,12 @@ def _split_cell(input_, self):
                     vals.append((vv, vt))
                     fmts.append(vf)
 
-
-            # warn if there is possibility for an array following the fill keyword:
+            # warn if there is possibility for an array following the fill
+            # keyword:
             # TODO fill value can be an array
             if 'fill' is s.lower() and 'lat' in ''.join(parm).lower():
-                print "WARNING: fill keyword followed by an array cannot be parsed"
+                print 'WARNING: fill keyword followed by an array',
+                print 'cannot be parsed'
 
     inpt = inpt_geom + inpt_parm
 
@@ -871,7 +859,7 @@ def _split_surface(input_):
     inpt = '\n'.join(input_)
     t = inpt.split()
 
-    vals = [] # like in split_cell()
+    vals = []  # like in split_cell()
     fmts = []
     tp = '_'
 
@@ -912,6 +900,7 @@ def _split_surface(input_):
 
     return inpt.split('\n'), vals, st, scoef
 
+
 def _get_int(s):
     r = ''
     for c in s:
@@ -920,6 +909,7 @@ def _get_int(s):
         elif c.isdigit():
             r += c
     return r
+
 
 def _parse_tr(input_):
     """
@@ -937,7 +927,8 @@ def _parse_tr(input_):
         inp2 = inp2.replace(s, '{}', 1)
 
     fvals = map(lambda s: (float(s), 'float'), svals)
-    return unit, (inp1 + ' ' +  inp2).split('\n'), fvals
+    return unit, (inp1 + ' ' + inp2).split('\n'), fvals
+
 
 def _split_data(input_):
     inpt = '\n'.join(input_)
@@ -954,7 +945,9 @@ def _split_data(input_):
         inpt = inpt.replace(ns, tp, 1)
         vals.append((int(ns), 'tr'))
         fmts.append(fmt_d(ns))
-    elif t[0][0].lower() == 'm' and 'mode' not in t[0].lower() and 'mesh' not in t[0].lower():
+    elif (t[0][0].lower() == 'm' and
+          'mode' not in t[0].lower() and
+          'mesh' not in t[0].lower()):
         # Mn, MTn or MPNn card
         ms = _get_int(t[0])
         inpt = inpt.replace(ms, tp, 1)
@@ -970,7 +963,7 @@ def _split_data(input_):
     elif t[0][0].lower() == 'f' and t[0][1].isdigit():
         # FN card
         dtype = 'Fn'
-        ns = _get_int(t[0]) # tally number
+        ns = _get_int(t[0])  # tally number
         inpt = inpt.replace(ns, tp, 1)
         vals.append((int(ns), 'tal'))
         fmts.append(fmt_d(ns))
@@ -985,7 +978,8 @@ def _split_data(input_):
             typ = ''
 
         if typ:
-            # Lattice indices, surrounded by square brakets must allready be hidden
+            # Lattice indices, surrounded by square brakets must allready be
+            # hidden
 
             # Special treatment, if tally has 'u=' syntax.
             hasu = 'u' in inpt.lower() and '=' in inpt.lower()
@@ -1009,7 +1003,7 @@ def _split_data(input_):
     elif 'fmesh' == t[0][:5].lower() and t[0][5].isdigit():
         # fmesh card
         dtype = 'fmesh'
-        ns = _get_int(t[0]) # tally number
+        ns = _get_int(t[0])  # tally number
         inpt = inpt.replace(ns, tp, 1)
         vals.append((int(ns), 'tal'))
         fmts.append(fmt_d(ns))
@@ -1022,9 +1016,6 @@ def _split_data(input_):
     return inpt.split('\n'), vals, dtype
 
 
-
-
-
 def is_commented(l):
     """
     Return True if l is a commented line.
@@ -1035,18 +1026,20 @@ def is_commented(l):
     l = l.splitlines()[0]
     if 'c ' in l[0:6].lstrip().lower():
         res = True
-        #print 'is_com "c "',
+        # print 'is_com "c "',
     elif 'c' == l.lower():
         res = True
-        #print 'is_com "c"',
-    #print 'is_com', res
+        # print 'is_com "c"',
+    # print 'is_com', res
     return res
+
 
 def is_fc_card(l):
     """
     Return true, if line l is tally comment cards, fcN
     """
     return l.lstrip().lower()[:2] == 'fc'
+
 
 def is_blankline(l):
     """
@@ -1074,13 +1067,13 @@ def get_cards(inp, debug=None):
             l = l[:]
         return l
 
-    cln = 0 # current line number. Used only for debug
+    cln = 0  # current line number. Used only for debug
     with open(inp, 'r') as f:
         # define the first block:
         # -----------------------
 
         # Next block ID
-        ncid = 0 # 0 is not used in card ID dictionary CID.
+        ncid = 0  # 0 is not used in card ID dictionary CID.
 
         # Parse the 1-st line. It can be message, cell or data block.
         l = replace_tab(f.next(), cln)
@@ -1112,7 +1105,8 @@ def get_cards(inp, debug=None):
         # --------------------
 
         # Line can be a continuation line in the following cases:
-        #   * all lines in the message block, i.e. before the blank line delimiter
+        #   * all lines in the message block, i.e. before the blank line
+        #     delimiter
         #   * if line starts with 5 or more spaces,
         #   * if previous line ends with & sign.
         # Thus, the role of the current line (continuation or not) can be
@@ -1121,11 +1115,12 @@ def get_cards(inp, debug=None):
         # is delimited by &, but is followed by the blank line delimiter.  in
         # this case (rather theretical), blank line delimiter (as appeared more
         # lately) delimites the card from the previous line.
-        cf = False  # continuation line flag. Set to true only when prev. line contains &.
+        cf = False  # continuation line flag. True only when prev. line has &.
 
-        # Comment lines (CL) can be between cards or inside them. CL between two cards are yielded as block of comments
-        # (although usually, CL are used to describe cards that follow them).
-        # CL inside a card will belong to the card.
+        # Comment lines (CL) can be between cards or inside them. CL between two
+        # cards are yielded as block of comments (although usually, CL are used
+        # to describe cards that follow them).  CL inside a card will belong to
+        # the card.
 
         card = []  # card is a list of lines.
         cmnt = []  # list of comment lines.
@@ -1133,9 +1128,11 @@ def get_cards(inp, debug=None):
             l = replace_tab(l, cln)
             cln += 1
             if is_blankline(l):
-                # blank line delimiter. Stops card even if previous line contains &
+                # blank line delimiter. Stops card even if previous line
+                # contains &
                 if card:
-                    # card can be empty, for example, when several empty lines are at the end of file
+                    # card can be empty, for example, when several empty lines
+                    # are at the end of file
                     yield _yield(card, ncid, cln - len(card) - len(cmnt))
                 if cmnt:
                     yield _yield(cmnt, CID.comment, cln - len(cmnt))
@@ -1148,24 +1145,27 @@ def get_cards(inp, debug=None):
             elif l[0:5] == '     ' or cf:
                 # l is continuation line.
                 if cmnt:
-                    card += cmnt # previous comment lines, if any, belong to the current card.
+                    card += cmnt  # prev. comment lines belong to this card.
                     cmnt = []
                 card.append(l)
                 cf = l.find('&', 0, 81) > -1
             elif is_commented(l):
-                # l is a line comment. Where it belongs (to the current card or to the next one),
-                # depends on the next line, therefore, just store temorarily.
+                # l is a line comment. Where it belongs (to the current card or
+                # to the next one), depends on the next line, therefore, just
+                # store temorarily.
                 cmnt.append(l)
             else:
-                # l is the 1-st line of a card. Return previous card and comments
+                # l is the 1-st line of a card. Return previous card and
+                # comments
                 if card:
                     yield _yield(card, ncid, cln - len(card) - len(cmnt))
                 if cmnt:
                     yield _yield(cmnt, CID.comment, cln - len(cmnt))
                     cmnt = []
                 card = [l]
-
-                cf = not is_fc_card(l) and l.find('&', 0, 81) > -1 # if tally comment card, i.e. started with fc, the & character does not mean continuation.
+                # if tally comment card, i.e. started with fc, the & character
+                # does not mean continuation.
+                cf = not is_fc_card(l) and l.find('&', 0, 81) > -1
         if card:
             yield _yield(card, ncid, cln - len(card) - len(cmnt))
         if cmnt:
@@ -1283,7 +1283,6 @@ def are_close_lists(x, y, re=1e-6, pci=[]):
     #     if r:
     #         break
     return result
-
 
 
 if __name__ == '__main__':

@@ -6,13 +6,15 @@ try:
     # try because numpy might be unavailable.
     import numpy
 except ImportError:
-    print "Numpy package is required for --mode nogq but cannot be found. Install it with "
+    print "Numpy package is required for --mode nogq but cannot "
+    print "be found. Install it with "
     print ""
     print " > pip install numpy"
     print ""
     raise
 except:
     raise
+
 
 def get_k(p):
     # define a2, c and vector k
@@ -21,13 +23,14 @@ def get_k(p):
 
     # define a2. Its definition deends on whether all DEF are zero or not.
     if (DEF == 0.).all():
-        # all DEF are zero. This means that only one of components of k is non-zero.
+        # all DEF are zero. This means that only one of components of k is
+        # non-zero.
         a2 = ABC.max()
     else:
         # at least one of DEF is non-zero.
         ii = abs(DEF).argmax()
         iv = DEF[ii]
-        a2 = numpy.roll(ABC, 1)[ii] - DEF[DEF != iv].prod()/iv 
+        a2 = numpy.roll(ABC, 1)[ii] - DEF[DEF != iv].prod()/iv
 
     # expression for gamma holds for any ABC and DEF:
     g = ABC.sum() - 3.0*a2
@@ -42,29 +45,26 @@ def get_k(p):
 
     return a2, g, k
 
+
 def cylinder(p, a2, g, k):
     # a2, g and k -- as returned from get_k
 
     A, B, C, D, E, F, G, H, J, K = p
 
     # vector i of the 'simple' CS
-    i = p[6:9] # G, H, J
+    i = p[6:9]  # G, H, J
     GHJ2 = (i**2).sum()
-    i = i / GHJ2**0.5 # normalize
+    i = i / GHJ2**0.5  # normalize
 
     # radius
-    r2 = GHJ2 /4./a2 - K
+    r2 = GHJ2 / 4. / a2 - K
 
     # x coordinate of CS in the simple CS:
-    x0 = GHJ2**0.5 /2./a2
+    x0 = GHJ2**0.5 / 2. / a2
 
     # vector j
     j = numpy.cross(k, i)
     return r2**0.5, -x0, i, j
-
-    # print 'c/z {} 0 {}'.format(-x0, r2**0.5)
-    # print 'tr 0 0 0 ' + ('{:12.4e}'*3).format(*i) + ' j j j ' + ('{:12.4e}'*3).format(*k) 
-
 
 
 def get_a2(p):
@@ -80,13 +80,11 @@ def get_a2(p):
     if F != 0.:
         a2dic['F'] = B - D*E/F*0.5
     if D == E == F == 0.:
-        # 
+        #
         pass
-    cdic = {}
     for k, a2 in a2dic.items():
-        c = ABC - 2.0*v
+        c = ABC - 2.0*a2
     return a2, c
-
 
 
 def is_gq_cylinder(p):
@@ -103,7 +101,7 @@ def is_gq_cylinder(p):
         raise ValueError()
 
     if not numpy.isclose(d*e*f, -8.*(1.-a)*(1.-b)*(1.-c)):
-        print ' D*E*F differs from -8(1-A)(1-B)(1-C)' , p
+        print ' D*E*F differs from -8(1-A)(1-B)(1-C)', p
         raise ValueError()
 
     return 1.0/p[0:3].sum() * p
@@ -116,7 +114,8 @@ def gq_axis(p):
     # aliases
     a, b, c, d, e, f, g, h, j, k = p
 
-    # direct formula, x = (1 - a)**0.5 can be unprecise when a close to 1. Thus, we use it only for the lowest from a, b or c
+    # direct formula, x = (1 - a)**0.5 can be unprecise when a close to 1. Thus,
+    # we use it only for the lowest from a, b or c
     if c > a < b:
         # a is the minimal coeff
         xc = (1. - a)**0.5
@@ -135,7 +134,6 @@ def gq_axis(p):
     return numpy.array((xc, yc, zc))
 
 
-
 def skprime(c):
     """
     c -- only one vector. Add two other that are orthonormal.
@@ -144,7 +142,7 @@ def skprime(c):
     j = numpy.array((0., 1., 0.))
     k = numpy.array((0., 0., 1.))
     if x == 1.:
-        # axis coincides with x-axis. 
+        # axis coincides with x-axis.
         pass
     elif y == 1.:
         # c coincides with y-axis. Use z to define j'
@@ -159,7 +157,6 @@ def skprime(c):
     return c, j, k
 
 
-
 def gq_orig(p, c):
     """
     rerurn coordinates of a point that axis c goes through.
@@ -169,14 +166,14 @@ def gq_orig(p, c):
     """
     # aliases
     a, b, C, d, e, f, g, h, j, k = p
-    xc, yc, zc = c 
+    xc, yc, zc = c
     M = numpy.array([[2.*a + xc, d + yc, f + zc],
                      [        d,   2.*b,      e],
                      [        f,      e,  2.*C]])
     B = numpy.array((-g, -h, -j))
 
     o = numpy.linalg.solve(M, B)
-    return o 
+    return o
 
 
 def gq_radius(p, o):
@@ -186,7 +183,8 @@ def gq_radius(p, o):
     # aliases
     a, b, c, d, e, f, g, h, j, k = p
     xo, yo, zo = o
-    rrr = numpy.array((-k, xo**2.*a, yo**2.*b, zo**2.*c, xo*yo*d, xo*zo*f, yo*zo*e))
+    rrr = numpy.array((-k, xo**2.*a, yo**2.*b, zo**2.*c,
+                       xo*yo*d, xo*zo*f, yo*zo*e))
     r2 = rrr.sum()
     if r2 < 0:
         print 'Radius is imaginary: r^2=', r2
@@ -195,14 +193,15 @@ def gq_radius(p, o):
 
 def plane(v, p1, p2):
     """
-    Return parameters of p card for the plane defined 
+    Return parameters of p card for the plane defined
     by vector v and two points p1 and p2.
     """
     v1 = v
     # second vector:
     v2 = p2 - p1
 
-    # vector perpendicular to the plane. Its components are actualy the coeffs A, B and C.
+    # vector perpendicular to the plane. Its components are actualy the coeffs
+    # A, B and C.
     abc = numpy.cross(v1, v2)
     A, B, C = abc
     D = - numpy.dot(p1, abc)
@@ -211,23 +210,26 @@ def plane(v, p1, p2):
 
 def gq_cylinder(gq):
     """
-    Computes parameters of a cylinder defined by the GQ card. Returns tuple (c, p, r), where
+    Computes parameters of a cylinder defined by the GQ card. Returns tuple (c,
+    p, r), where
 
-        c -- vector parallel to the cylinder axis, 
-        p -- coordinate of the point of the cylinder axis, closest to the origin, and
+        c -- vector parallel to the cylinder axis,
+        p -- coordinate of the point of the cylinder axis, closest to the
+             origin, and
         r -- cylinder radius.
 
     """
 
     # Normalized set of GQ parameters, axis c, point p and radius r
-    n = is_gq_cylinder(gq) 
+    n = is_gq_cylinder(gq)
     c = gq_axis(n)
     p = gq_orig(n, c)
     r = gq_radius(n, p)
 
-    # Rotational matrix of the coordinate system with x // to the cylinder axis, and coordinates of the point p in this SC:
-    M = numpy.vstack(skprime(c)) # rotational matrix
-    pp = numpy.dot(M, p)         # position of p in the new CS
+    # Rotational matrix of the coordinate system with x // to the cylinder axis,
+    # and coordinates of the point p in this SC:
+    M = numpy.vstack(skprime(c))  # rotational matrix
+    pp = numpy.dot(M, p)          # position of p in the new CS
 
     res = {}
     # c/x parameters
@@ -243,11 +245,11 @@ def gq_cylinder(gq):
 
 def get_gq_params(l):
     """
-    Returns a numpy array of GQ card parameters. The string l represents (a part of) the GQ card.
+    Returns a numpy array of GQ card parameters. The string l represents (a part
+    of) the GQ card.
     """
     p, pl = l.lower().split('gq')
-    return numpy.array( map(float, pl.split()))
-
+    return numpy.array(map(float, pl.split()))
 
 
 if __name__ == '__main__':
@@ -264,7 +266,7 @@ if __name__ == '__main__':
 
     pd[529] = '      GQ        0.1266259       0.8843003       0.9890738      -0.6357644 0.0711100       0.1953731       3.3799982     152.7691336 527.3458317   74784.8647000 '
     pd[530] = '      GQ        0.1266259       0.8843003       0.9890738      -0.6357644 0.0711100       0.1953731       3.3799982     152.7691336 527.3458317   74684.8647000 '
-    pd[532] = '      GQ        0.1266259       0.8843003       0.9890738      -0.6357644 0.0711100       0.1953731       6.8598356     132.6895083 493.1163947   64843.3354134 ' 
+    pd[532] = '      GQ        0.1266259       0.8843003       0.9890738      -0.6357644 0.0711100       0.1953731       6.8598356     132.6895083 493.1163947   64843.3354134 '
 
     # GQ from m1_ model in to5
     pd[25177] = '       GQ        0.6951738       0.9781145       0.3267118       0.1633559 -0.2427779       0.9060594   -1292.6456577     346.3633601 -932.2182196  664976.9633871 '
@@ -282,7 +284,6 @@ if __name__ == '__main__':
         print 'xo0', xo0, '***'*20
 
         for n in [532, 25099, 25100, 25177, 25185, 25183, 25187, 25179, 25181]:
-        # for n in [529, 528, 517, 520, 529]:
             p = get_gq_params(pd[n])
             p = is_gq_cylinder(p)
             # # axis coordinates and normalized p
@@ -292,7 +293,7 @@ if __name__ == '__main__':
             # x, y, z = o
             # trrot = '   {} {} {}'.format(*c) # rotational part of TR card
             # print '{0} {0} cx {1}'.format(n, r)
-            # print 'tr{} {} {} {}'.format(n, x, y, z), trrot 
+            # print 'tr{} {} {} {}'.format(n, x, y, z), trrot
 
             # # c/x card. Here one needs to define all coordinate vectors in the new CS,
             # # and get y0 and z0 -- position of cylinder axis in the new CS.
@@ -302,10 +303,10 @@ if __name__ == '__main__':
             # u, v, w = op
             # print 'c'
             # print '{} {} c/x {} {} {}'.format(n, n, v, w, r)
-            # print 'tr{} 0 0 0 '.format(n), trrot, '{} {} {}'.format(*j), '{} {} {}'.format(*k) 
+            # print 'tr{} 0 0 0 '.format(n), trrot, '{} {} {}'.format(*j), '{} {} {}'.format(*k)
             # print '-'*20
 
-            r = gq_cylinder(p) 
+            r = gq_cylinder(p)
             print r
 
 
