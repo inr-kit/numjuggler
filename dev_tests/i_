@@ -1,0 +1,15 @@
+Test of FILL=### followed immediately by transformation
+1 1 -10   1 -2  imp:n=1 fill=2(5 5 5)
+2 0      -1: 2  imp:n=0
+3 2 -10   3 -4  u=2   imp:n=1
+4 3 -10  -3: 4  u=2   imp:n=1
+
+1 px 0
+2 px 10
+3 py 0
+4 py 10
+
+m1 1001 1
+m2 1001 1
+m3 1001 1
+
