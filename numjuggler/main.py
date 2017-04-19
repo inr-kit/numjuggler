@@ -823,7 +823,7 @@ def main():
             else:
                 iflag = False
             # uref = set(map(int, args.u.split()))
-            uref = set(rin.expand(args.u.split()))
+            uref = set(map(int, rin.expand(args.u.split())))
             cset = set()
             sset = set()
             mset = set()
@@ -880,6 +880,14 @@ def main():
 
                     print(c.card(), end='')
             print('c sset', ' '.join(map(str, rin.shorten(sorted(sset)))))
+            print('c uref', ' '.join(map(str, rin.shorten(sorted(uref)))))
+            # print dummy universes, just in case they are needed
+            print()
+            l = len(str(max(uref)))
+            f = '{{0:0{}d}}'.format(l)
+            for u in sorted(uref):
+                s = f.format(u)
+                print('dummy_prefix{0} 0 dummy_surface u={0}'.format(s), u)
             print('c mset', ' '.join(map(str, rin.shorten(sorted(mset)))))
 
         elif args.mode == 'zrotate':
