@@ -286,6 +286,8 @@ class Card(object):
                 unit, inpt, fvals = _parse_tr(inpt)
                 self.unit = unit
                 vt += fvals
+            if self.dtype is not None:
+                self.name = vt[0][0]
         else:
             inpt = self.input
             vt = []

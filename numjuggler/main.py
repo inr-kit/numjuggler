@@ -432,7 +432,7 @@ def main():
                             'nogq', 'count', 'nofill', 'matinfo', 'uinfo',
                             'impinfo', 'fillempty', 'sinfo', 'vsource',
                             'tallies', 'addgeom', 'merge', 'remu', 'zrotate',
-                            'annotate', 'getc'],
+                            'annotate', 'getc', 'mnew'],
                    default='renum')
     p.add_argument('--debug', help='Additional output for debugging',
                    action='store_true')
@@ -763,6 +763,44 @@ def main():
                 else:
                     print(c.card(), end='')
 
+        elif args.mode == 'mnew':
+            # read from map definition of new materials in terms of existing
+            # materials, and add new to the modified input.
+
+            # Read new material definitions from the map file:
+            dd = {} # definition dictionary
+            rms = set() # reference materials set
+            with open(args.map) as fmap:
+                for l in fmap:
+                    tl = l.split()
+                    rml = map(int, tl[1::3])
+                    dd[tl[0]] = zip(rml,
+                                    map(float, tl[2::3]),
+                                    map(float, tl[3::3]))
+                    rms.update(rml)
+
+            # read reference materials and create Materials
+            from pirs.mcnp import Material
+            rmd = {}
+            for c in cards:
+                if c.ctype == mp.CID.data:
+                    c.get_values()
+                    if c.dtype == 'Mn' and c.name in rml:
+                        m = Material.parseCard(c)
+                        m.name = 'm{} from {}'.format(c.name, args.inp)
+                        rmd[c.name] = m
+
+            # create new materials
+            for n, d in dd.items():
+                r = [] # recipe
+                for i in d:
+                    r.append(rmd[i[0]])
+                    r.append((i[1] * i[2], 2))
+                m = Material(*r)
+                print('\nc '.join(m.report().splitlines()))
+                print(m.card().format(n))
+
+
         elif args.mode == 'sdupl':
             # report duplicate (close) surfaces.
             # dict of unique surafces
@@ -887,7 +925,7 @@ def main():
             f = '{{0:0{}d}}'.format(l)
             for u in sorted(uref):
                 s = f.format(u)
-                print('dummy_prefix{0} 0 dummy_surface u={0}'.format(s), u)
+                print('dummy_prefix{0} 0 dummy_surface u={0}'.format(s))
             print('c mset', ' '.join(map(str, rin.shorten(sorted(mset)))))
 
         elif args.mode == 'zrotate':
