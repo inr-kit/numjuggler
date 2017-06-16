@@ -99,7 +99,7 @@ split:
     > numjuggler --mode split inp_
     > cat inp_.[1-5]* > inp2_          # inp2_ lacks all blank lines
     > echo '' > bl
-    > cat inp_.1* bl inp_.2* bl inp_.3* bl inp_.4* bl inp_.5* bl > inp3_
+    > cat inp_.1* bl inp_.2* inp_.3* bl inp_.4* bl inp_.5* bl > inp3_
 
     After these commands, file `inp3_` is equivalent to `inp_`.
 
@@ -883,6 +883,13 @@ def main():
                     uset.add(c.get_u())
             if iflag:
                 uref = uset.difference(uref)
+                # None can be added to uref when no universe is specified
+                # explicitly (i.e. for all u0 cells)
+                uref.discard(None)
+
+            # Universe number that is used to replace all deleted universes
+            # in hte FILL options
+            newfill = sorted(uref)[0]
 
             # get list of cells to be removed
             # and list of surfaces to be preserved
@@ -898,6 +905,15 @@ def main():
                             if t == 'mat':
                                 mset.add(v)
 
+            # Prepare additional lines to be added to cell and surface blocks:
+            newcell = 'c '
+            newsurf = 'c '
+            if args.m != '0':   # -c is already used!
+                newcell = args.m
+            if args.s != '0':
+                newsurf = args.s
+
+            prevctype = None
             for c in cards:
                 if c.ctype == mp.CID.cell and c.name in cset:
                     pass
@@ -915,8 +931,24 @@ def main():
                             v, t = c.values[i]
                             if t == 'cel' and v in cset:
                                 c.values[i] = ('___', 'cel')
+                    # If the cell is filled with a universe to delete,
+                    # change its fill to newfill:
+                    if c.get_f() in uref:
+                        c.get_f(newv = newfill)
+
+                    # Insert additional cell
+                    if prevctype == mp.CID.cell and c.ctype == mp.CID.blankline:
+                        print(newcell)
 
                     print(c.card(), end='')
+
+                    # Insert additional surface
+                    if prevctype == mp.CID.cell and c.ctype == mp.CID.blankline:
+                        print(newsurf)
+
+                if c.ctype != mp.CID.comment:
+                    prevctype = c.ctype
+
             print('c sset', ' '.join(map(str, rin.shorten(sorted(sset)))))
             print('c uref', ' '.join(map(str, rin.shorten(sorted(uref)))))
             # print dummy universes, just in case they are needed
