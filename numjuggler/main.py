@@ -1509,6 +1509,19 @@ def main():
                     n1, v1, n2, v2 = v
                     print('c ', k, n1, v1)
                     print('c ', k, n2, v2)
+                elif k == 's':
+                    # propose parameters of the circumscribing sphere
+                    x = surfaces['x']
+                    y = surfaces['y']
+                    z = surfaces['z']
+                    cx = (x[1] + x[3])*0.5
+                    cy = (y[1] + y[3])*0.5
+                    cz = (z[1] + z[3])*0.5
+                    r = ((x[3] - x[1])**2 +
+                         (y[3] - y[1])**2 +
+                         (z[3] - z[1])**2)**(0.5) * 0.55
+                    print('c ', k, cx, cy, cz, r)
+
 
 
             # Process -u key
