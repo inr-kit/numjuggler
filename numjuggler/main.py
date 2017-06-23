@@ -240,8 +240,50 @@ merge:
 
 
 remu:
-    Remove all cells that belong to the universe specified in the -u option.
-    SUrfaces that are used only for these cells are removed also.
+    Remove all cells that belong to the universe specified in the -u option, or
+    cells specified in the -c option. Surfaces that are used only for the
+    removed cells are removed as well.
+
+    One can use the "I" MCNP short-hand notation in the -u and -c options to
+    specify a range of universe or cell numbers.
+
+    If the -u keyword string starts with "!", than all except the specified
+    universes are removed.
+
+    When universes to remove are given with the -u option, the FILL options are
+    changed by replacing the removed universe numbers with the smallest universe
+    number to be removed.
+
+    One can specify additional cell cards and surface cards using the -m and -s
+    options. The content of -m is appended to the card's block; the content of
+    -s is prepended to the surface block.
+
+    Examples:
+
+        # Remove cells of universe 4
+
+        > numjuggler --mode remu -u "4" inp.1 > inp.2
+
+
+        # Remove cells of universes 4 and 5. In this case, FILL=5, if any, will
+        # be replaced with FILL=4
+
+        > numjuggler --mode remu -u "4 5" inp.1 > inp.2
+
+
+        # Remove cells 1, 2 and 3:
+
+        > numjuggler --mode remu -c "1 2 3" inp.1 > inp.2
+
+
+        # Remove all universes except 4 and add description of cell 100 and
+        # surface 100. All cells filled with deleted universes will be filled in
+        # the new input file with cell 100:
+
+        > numjuggler --mode remu -u "!4" \
+                       -m "100 0 -100 imp:n=1 imp:p=1 u=4"\
+                       -s "100 so 1e5"
+                       inp.1 > inp.2
 
 
 zrotate:
