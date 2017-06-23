@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import argparse as ap
+from math import pi as Pi
 import os.path
 from numjuggler import numbering as mn
 from numjuggler import parser as mp
@@ -1471,13 +1472,14 @@ def main():
             def print_planar(params, d=1e-5, u='0'):
 
                 # u defines which sdef is printed:
-                v = 1
                 if '_' in u:
                     v = -1
                     u = u.replace('_', '')
                 elif '+' in u:
                     v = 1
                     u = u.replace('+', '')
+                else:
+                    v = 1
 
                 c = ['c x', 'c y', 'c z']
                 if u in 'xX':
@@ -1515,67 +1517,127 @@ def main():
                 print(fm3.format(2))
                 print(fm3.format(3))
 
-            def print_spherical(params, d=1e-5):
-                print('Not implemented yet')
+            def print_spherical(s, r):
+                """
+                s -- spherical surface number, r -- its radius. Radius is
+                needed to compute weight for volume calculations.
+                """
+                print('sdef sur {} nrm -1 wgt {:12.7e}'.format(s, Pi * r**2))
+
+
+            # Try to find proper surfaces:
+            surfaces = dict(zip('xyzs', (None,)*4))
+            for c in cards:
+                if c.ctype == mp.CID.surface:
+                    c.get_values()
+                    if c.stype in ('px', 'py', 'pz', 'so', 's'):
+                        # this is surface-candidate. Check its parameters:
+                        k = c.stype.replace('p', '').replace('o', '')
+                        if k == 'p':
+                            v = c.scoefs[0]  # plane position
+                        else:
+                            v = c.scoefs[-1] # sphere radius
+                        if surfaces[k] is None:
+                            surfaces[k] = (c.name, v, c.name, v)
+                        else:
+                            n1, v1, n2, v2 = surfaces[k]
+                            if v1 > v:
+                                surfaces[k] = (c.name, v, n2, v2)
+                            if v2 < v:
+                                surfaces[k] = (n1, v1, c.name, v)
+
+            for k, v in surfaces.items():
+                if v is not None:
+                    n1, v1, n2, v2 = v
+                    print('c ', k, n1, v1)
+                    print('c ', k, n2, v2)
+                elif k == 's':
+                    # propose parameters of the circumscribing sphere
+                    x = surfaces['x']
+                    y = surfaces['y']
+                    z = surfaces['z']
+                    cx = (x[1] + x[3])*0.5
+                    cy = (y[1] + y[3])*0.5
+                    cz = (z[1] + z[3])*0.5
+                    r = ((x[3] - x[1])**2 +
+                         (y[3] - y[1])**2 +
+                         (z[3] - z[1])**2)**(0.5) * 0.55
+                    print('c ', k, cx, cy, cz, r)
+
+
+
+            # Process -u key
+            if args.u[-1] in 'xXyYzZ':
+                # planar source
+                params = []
+                for k in 'xyz':
+                    if surfaces[k] is None:
+                        print(k)
+                        raise ValueError('Planes not found for planar source')
+                    else:
+                        n1, v1, n2, v2 = surfaces[k]
+                        params.extend([v1, v2])
+                print_planar(params, d=1e-5, u=args.u)
+            elif args.u == 's':
+                if surfaces['s'] is None:
+                    raise ValueError('Planes not found for planar source')
+                else:
+                    n1, v1, n2, v2 = surfaces['s']
+                print_spherical(n2, v2)
+
 
             if args.c != '0':
                 print('c source from -c parameters')
                 vals = list(map(float, args.c.split()))
-                if len(vals) == 1:
-                    # radius of a sphere on the origin
-                    print_spherical([0, 0, 0, vals[0]])
-                elif len(vals) == 4:
-                    # sphere coordinates and radius:
-                    print_spherical(vals)
-                elif len(vals) == 6:
+                if len(vals) == 6:
                     # x, y and z range of a box:
                     print_planar(vals, u=args.u)
                 else:
                     raise ValueError('Wrong number of entries in the -c option')
 
-            if args.s != '0':
-                print('c source from -s parameters')
-                nset = set(map(int, args.s.split()))
-                sset = {}
-                for c in cards:
-                    if c.ctype == mp.CID.surface:
-                        c.get_values()
-                        if c.name in nset:
-                            sset[c.name] = c
-                    elif c.ctype == mp.CID.data:
-                        break
+            # if args.s != '0':
+            #     print('c source from -s parameters')
+            #     nset = set(map(int, args.s.split()))
+            #     sset = {}
+            #     for c in cards:
+            #         if c.ctype == mp.CID.surface:
+            #             c.get_values()
+            #             if c.name in nset:
+            #                 sset[c.name] = c
+            #         elif c.ctype == mp.CID.data:
+            #             break
 
-                if len(sset) == 1:
-                    # -s interpreted as a sphere surface.
-                    n, c = list(sset.items())[0]
-                    if c.stype == 'so':
-                        r = c.scoefs[0]
-                        x = 0
-                        y = 0
-                        z = 0
-                    elif c.stype == 's':
-                        x, y, z, r = c.scoefs
-                    else:
-                        raise ValueError('Surface {} not a sphere'.format(n))
-                    print_spherical([x, y, z, r])
+            #     if len(sset) == 1:
+            #         # -s interpreted as a sphere surface.
+            #         n, c = list(sset.items())[0]
+            #         if c.stype == 'so':
+            #             r = c.scoefs[0]
+            #             x = 0
+            #             y = 0
+            #             z = 0
+            #         elif c.stype == 's':
+            #             x, y, z, r = c.scoefs
+            #         else:
+            #             raise ValueError('Surface {} not a sphere'.format(n))
+            #         print_spherical(n, r)
 
-                elif len(sset) == 6:
-                    # -s is interpreted as a list of px, py and pz planes.
-                    x = []
-                    y = []
-                    z = []
-                    for n, c in list(sset.items()):
-                        if c.stype == 'px':
-                            x.append(c.scoefs[0])
-                        elif c.stype == 'py':
-                            y.append(c.scoefs[0])
-                        elif c.stype == 'pz':
-                            z.append(c.scoefs[0])
-                        else:
-                            raise ValueError('Surface {} not a px, py or pz plane'.format(n))
-                    print_planar(sorted(x) + sorted(y) + sorted(z), u=args.u)
-                else:
-                    raise ValueError('Wront number of surfaces in -s option')
+            #     elif len(sset) == 6:
+            #         # -s is interpreted as a list of px, py and pz planes.
+            #         x = []
+            #         y = []
+            #         z = []
+            #         for n, c in list(sset.items()):
+            #             if c.stype == 'px':
+            #                 x.append(c.scoefs[0])
+            #             elif c.stype == 'py':
+            #                 y.append(c.scoefs[0])
+            #             elif c.stype == 'pz':
+            #                 z.append(c.scoefs[0])
+            #             else:
+            #                 raise ValueError('Surface {} not a px, py or pz plane'.format(n))
+            #         print_planar(sorted(x) + sorted(y) + sorted(z), u=args.u)
+            #     else:
+            #         raise ValueError('Wront number of surfaces in -s option')
 
         elif args.mode == 'fillempty':
             # add 'FILL =' to all void non-filled cells.
