@@ -1238,18 +1238,7 @@ def main():
                         print(c.card(), end='')
 
         elif args.mode == 'nogq':
-            try:
-                # try because nogq requires numpy.
-                from numjuggler import nogq
-            except ImportError:
-                print("Numpy package is required for --mode nogq but cannot ")
-                print("be found. Install it with ")
-                print("")
-                print(" > pip install numpy")
-                raise
-            except:
-                raise
-
+            from numjuggler import nogq
             trn0 = int(args.t)
             cflag = False if args.c == "0" else True
 
@@ -1263,7 +1252,7 @@ def main():
                     c.get_values()
                     if c.stype == 'gq':
                         p = nogq.get_gq_params(' '.join(c.input))
-                        a2, g, k = nogq.get_k(p)
+                        a2, g, kk = nogq.get_k(p)
                         if cflag:
                             crd = (crd[:-1] +
                                    '$ a^2={:12.6e} c={:12.6e}\n'.format(a2,
@@ -1271,9 +1260,9 @@ def main():
                         if abs((g + a2) / a2) < 1e-6:
                             # this is a cylinder. Comment original card and
                             # write another one
-                            R, x0, i, j = nogq.cylinder(p, a2, g, k)
+                            R, x0, i, j = nogq.cylinder(p, a2, g, kk)
                             # add transformation set
-                            tr = tuple(i) + tuple(j) + tuple(k)
+                            tr = tuple(i) + tuple(j) + tuple(kk)
                             for k, v in list(trd.items()):
                                 if tr == v:
                                     trn = k
@@ -1290,6 +1279,7 @@ def main():
                                 crd = ''
                             crd += '{} {} c/z {:15.8e} 0 {:15.8e}\n'.format(
                                 c.name, trn + trn0, x0, R)
+                            crd += 'c a^2={:12.6e} g={:12.6e} k={}\n'.format(a2, g, kk)
                 print(crd, end='')
                 if trd and c.ctype == mp.CID.blankline:
                     # this is blankline after surfaces. Put tr cards here
@@ -1580,7 +1570,7 @@ def main():
                 print_planar(params, d=1e-5, u=args.u)
             elif args.u == 's':
                 if surfaces['s'] is None:
-                    raise ValueError('Planes not found for planar source')
+                    raise ValueError('Spheres not found for spherical source')
                 else:
                     n1, v1, n2, v2 = surfaces['s']
                 print_spherical(n2, v2)
