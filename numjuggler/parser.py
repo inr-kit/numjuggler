@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Functions for parsing MCNP input files.
 """
@@ -115,8 +117,8 @@ class Card(object):
         self.values = []
 
         # geometry prefix and suffix
-        self.geom_prefix = ''
-        self.geom_suffix = ''
+        # self.geom_prefix = ''
+        # self.geom_suffix = ''
 
         # some properties defined on demand
         # cell properties
@@ -134,12 +136,48 @@ class Card(object):
         self.get_input()
         return
 
+    def _get_value_by_type(self, t):
+        """
+        Returns the first value of type t found in self.values.
+        """
+        vl, tl = zip(*self.values)
+        try:
+            i = tl.index(t)
+        except ValueError:
+            return None
+        finally:
+            return vl[i]
+
+    def _set_value_by_type(self, t, v):
+        """
+        Sets the first value of type t to v in self.values.
+        """
+        vl, tl = zip(*self.values)
+        i = tl.index(t)
+        self.values[i] = (v, t)
+
+    @property
+    def geom_prefix(self):
+        return self._get_value_by_type('#gpr')
+
+    @geom_prefix.setter
+    def geom_prefix(self, value):
+        return self._set_value_by_type('#gpr', value)
+
+    @property
+    def geom_suffix(self):
+        return self._get_value_by_type('#gsu')
+
+    @geom_suffix.setter
+    def geom_suffix(self, value):
+        return self._set_value_by_type('#gsu', value)
+
     def print_debug(self, comment, key='tihv'):
         d = self.debug
         if d:
             print('Line {}, {} card. {}'.format(self.pos,
-                                                      CID.get_name(self.ctype),
-                                                      comment), file=d)
+                                                CID.get_name(self.ctype),
+                                                comment), file=d)
             if 't' in key:
                 print('    template:', repr(self.template), file=d)
             if 'i' in key:
@@ -314,6 +352,19 @@ class Card(object):
             self.__cr = s
             return self.__cr
 
+    def get_geom(self):
+        """
+        Returns part of the cell card describing geometry, as a (multiline)
+        string.
+        """
+        p, s = self.geom_prefix, self.geom_suffix
+        self.geom_prefix = '§'
+        self.geom_suffix = '§'
+        geom = self.card().split('§')[1]
+        self.geom_prefix = p
+        self.geom_suffix = s
+        return geom
+
     def get_u(self):
         """
         Returns universe, the cells belongs to.
@@ -481,15 +532,15 @@ class Card(object):
         """
         Return multi-line string representing the card.
         """
-        if self.ctype == CID.cell and self.geom_prefix + self.geom_suffix != '':
-            newvals = []
-            for v, t in self.values:
-                if t == '#gpr':
-                    v = self.geom_prefix
-                elif t == '#gsu':
-                    v = self.geom_suffix
-                newvals.append((v, t))
-            self.values = newvals
+        # if self.ctype == CID.cell and self.geom_prefix + self.geom_suffix != '':
+        #     newvals = []
+        #     for v, t in self.values:
+        #         if t == '#gpr':
+        #             v = self.geom_prefix
+        #         elif t == '#gsu':
+        #             v = self.geom_suffix
+        #         newvals.append((v, t))
+        #     self.values = newvals
 
         if self.input:
             # put values back to meaningful parts:
@@ -540,7 +591,8 @@ class Card(object):
                                 # there is no proper place to wrap.
                                 self.print_debug('Cannot wrap line ' +
                                                  repr(i), '')
-                                warnings.warn('Cannot wrap card on line {}'.format(self.pos))
+                                warnings.warn('Cannot wrap card'
+                                              ' on line {}'.format(self.pos))
                                 break
                         else:
                             # input i fits to one line. Do nothing.
@@ -604,39 +656,39 @@ class Card(object):
         return
 
 
-def _parse_geom(geom):
-    """
-    Parse the geometry part of a cell card.
-    """
-    raise NotImplementedError()
-    t = geom.split()
-    vals = []
-    fmts = []
-
-    # cell name
-    js = t.pop(0)
-    geom = geom.replace(js, tp, 1)
-    vals.append((int(js), 'cel'))
-    fmts.append(fmt_d(js))
-
-    if 'like' in geom.lower():
-        # this is like-but syntax
-        pass
-    else:
-        # get material and density.
-        # Density, if specified in cells card, should be allready hidden
-        ms = t.pop(0)
-        if int(ms) == 0:
-            inpt = inpt.replace(ms, tp+tp , 1)
-        else:
-            inpt = inpt.replace(ms, tp, 1)
-            inpt = inpt.replace('~', '~'+tp, 1)
-        vals.append((int(ms), 'mat'))
-        fmts.append(fmt_d(ms))
-
-        # placeholder for geometry prefix
-        vals.append(('', '#gpr'))
-        fmts.append('{}')
+# def _parse_geom(geom):
+#     """
+#     Parse the geometry part of a cell card.
+#     """
+#     raise NotImplementedError()
+#     t = geom.split()
+#     vals = []
+#     fmts = []
+#
+#     # cell name
+#     js = t.pop(0)
+#     geom = geom.replace(js, tp, 1)
+#     vals.append((int(js), 'cel'))
+#     fmts.append(fmt_d(js))
+#
+#     if 'like' in geom.lower():
+#         # this is like-but syntax
+#         pass
+#     else:
+#         # get material and density.
+#         # Density, if specified in cells card, should be allready hidden
+#         ms = t.pop(0)
+#         if int(ms) == 0:
+#             inpt = inpt.replace(ms, tp+tp , 1)
+#         else:
+#             inpt = inpt.replace(ms, tp, 1)
+#             inpt = inpt.replace('~', '~'+tp, 1)
+#         vals.append((int(ms), 'mat'))
+#         fmts.append(fmt_d(ms))
+#
+#         # placeholder for geometry prefix
+#         vals.append(('', '#gpr'))
+#         fmts.append('{}')
 
 
 def _split_cell(input_, self):
@@ -805,7 +857,7 @@ def _split_cell(input_, self):
                 vsl.append('(')
                 vvl.append('(')
                 vfl.append(fmt_s('('))
-                vtl.append('#(')  # types starting with '#' are internal types, not to be output in --mode info.
+                vtl.append('#(')  # #-types are internal, don't output in --mode info.
                 t[0] = t[0].replace('(', '', 1)
 
                 # add entries in parentheses and the closing parenthis

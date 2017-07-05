@@ -1,5 +1,8 @@
 Union cells
 =============
+
+
+
 When several input files merged into a single model, at least the "other world"
 cells must be modified.
 
@@ -26,5 +29,10 @@ number defines the combined cell name. If all cell numbers exist, the combined
 cell geometry is written to the 1-st cell mentioned in -c.
 
 
+UPD:
+--------
+Implemented. Only existing cells are allowed in -c.
 
 
+Generate file with plot commands
+===================================

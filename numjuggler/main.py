@@ -475,7 +475,7 @@ def main():
                             'nogq', 'count', 'nofill', 'matinfo', 'uinfo',
                             'impinfo', 'fillempty', 'sinfo', 'vsource',
                             'tallies', 'addgeom', 'merge', 'remu', 'zrotate',
-                            'annotate', 'getc', 'mnew'],
+                            'annotate', 'getc', 'mnew', 'combinec'],
                    default='renum')
     p.add_argument('--debug', help='Additional output for debugging',
                    action='store_true')
@@ -1002,6 +1002,42 @@ def main():
                 s = f.format(u)
                 print('dummy_prefix{0} 0 dummy_surface u={0}'.format(s))
             print('c mset', ' '.join(map(str, rin.shorten(sorted(mset)))))
+
+        elif args.mode == 'combinec':
+            # Combine cells, listed in -c flag.
+
+            # Get cells to be combined from command line parameter
+            clst1 = list(rin.expand(args.c.split()))
+
+            # Get the cell geometry
+            d = {}
+            for c in cards:
+                if c.ctype == mp.CID.cell:
+                    c.get_values()
+                    if c.name in clst1:
+                        d[c.name] = c
+                if d and c.ctype == mp.CID.blankline:
+                    break
+
+            new_card = d[clst1[0]]
+            new_card.geom_prefix = ' ('
+            new_card.geom_suffix = ') '
+            for n in clst1[1:]:
+                g = d[n].get_geom()
+                g = ' '.join(g.splitlines())
+                new_card.geom_suffix += ' ({})'.format(g)
+
+
+            # Print out the new file
+            for c in cards:
+                if c.ctype == mp.CID.cell:
+                    if c.name in clst1[1:]:
+                        print('c ' + '\nc '.join(c.card().splitlines()))
+                    else:
+                        print(c.card(), end='')
+                else:
+                    print(c.card(), end='')
+
 
         elif args.mode == 'zrotate':
 
