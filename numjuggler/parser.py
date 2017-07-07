@@ -650,7 +650,12 @@ class Card(object):
                 t1 = 'u'
             else:
                 t1 = t[1]
-            newvals.append((f(t[0], t1), t[1]))
+            # newvals.append((f(t[0], t1), t[1]))
+            if t1 in f:
+                newval = f[t1](t[0])
+            else:
+                newval = t[0]
+            newvals.append((newval, t[1]))
         self.values = newvals
         self.print_debug('after apply_map', 'vi')
         return

@@ -36,3 +36,15 @@ Implemented. Only existing cells are allowed in -c.
 
 Generate file with plot commands
 ===================================
+
+
+Modified syntax in the map file
+====================================
+For specification of range use MCNP I-notatation. Add possibility to specify range that does not changed by the default mapping.
+
+UPD:
+------
+
+In the current inmplementation, I still use ``--``, which is simpler than the MCNP I-notation (no need to specify number of
+inserted elements). Now one can mix separate values and ranges on the same line.
+

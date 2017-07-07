@@ -1025,7 +1025,7 @@ def main():
             for n in clst1[1:]:
                 g = d[n].get_geom()
                 g = ' '.join(g.splitlines())
-                new_card.geom_suffix += ' ({})'.format(g)
+                new_card.geom_suffix += '({}) '.format(g)
 
 
             # Print out the new file
@@ -1709,36 +1709,40 @@ def main():
                 print(c.card(), end='')
 
         elif args.mode == 'renum':
+            import likefunc as lf
             for c in cards:
                 c.get_values()
 
             if args.map:
-                # if map file is given, ignore all -c, -s, -u and -m.
-                dm = mn.read_map_file(args.map)
-
+                maps = lf.read_map_file(args.map, log=args.log != '')
             else:
-                # number: index dictionary only if needed:
-                if 'i' in (args.c, args.s, args.m, args.u):
-                    di = mn.get_indices(cards)
+                maps = {}
+
+            # index dictionary only if needed:
+            if 'i' in (args.c, args.s, args.m, args.u):
+                imaps = lf.get_indices(cards, log=args.log != '')
+
+            for t in ['cel', 'sur', 'mat', 'u', 'tr']:
+                # If command line paramters are specified, they rewrite maps
+                # from the map file
+                dn = getattr(args, t[0])
+                if dn == 'i':
+                    maps[t] = imaps[t]
+                    maps[t].doc = 'Indexing function for {}'.format(t)
+                    maps[t].default = None   # This will raise error if applied to non-existent value
                 else:
-                    di = {}
+                    maps[t] = lf.LikeFunction(log=args.log != '')
+                    maps[t].default = lf.add_func(int(dn))
 
-                dm = {}
-                for t in ['cel', 'sur', 'mat', 'u', 'tr']:
-                    dn = getattr(args, t[0])
-                    if dn == 'i':
-                        # None to raise an error, when None will be added to an
-                        # int. (Indexes should be defined to all numbers, thus
-                        # the default mapping should not be used.
-                        dm[t] = [None, di[t]]
-                    else:
-                        # do not modify zero material
-                        dm[t] = [int(dn), [(0, 0, 0)]]
+                    # do not modify zero numbers (important for material
+                    # numbers)
+                    maps[t].mappings[lf.Range(0)] = lf.const_func(0)
 
-            mapping = mn.LikeFunction(dm, args.log != '')
+                    maps[t].doc = 'Function for {} from command line'.format(t)
+
 
             for c in cards:
-                c.apply_map(mapping)
+                c.apply_map(maps)
                 print(c.card(), end='')
 
             if args.log != '':
