@@ -245,6 +245,9 @@ class Card(object):
                         tmpl.append(fmt_s(i) + t)
             self.input = inpt
             self.template = ''.join(tmpl)
+
+            # TODO: dtype and name of the card can be defined already here.
+
         self.print_debug('get_input', 'ti')
         return
 
@@ -424,6 +427,16 @@ class Card(object):
             # entry in self.hidden dictionary.
             self.__d = float(self.hidden['~'][0])
             return self.__d
+
+    def set_d(self, v):
+        """
+        Set density. Accespted are string represetntaion of a float.
+
+        It is assumed that get_values() method is called before this.
+        """
+        if self.get_m() > 0:
+            self.hidden['~'][0] = v
+            self.__d = float(v)
 
     def get_f(self, newv=None):
         """

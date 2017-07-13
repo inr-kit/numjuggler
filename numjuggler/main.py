@@ -475,7 +475,7 @@ def main():
                             'nogq', 'count', 'nofill', 'matinfo', 'uinfo',
                             'impinfo', 'fillempty', 'sinfo', 'vsource',
                             'tallies', 'addgeom', 'merge', 'remu', 'zrotate',
-                            'annotate', 'getc', 'mnew', 'combinec'],
+                            'annotate', 'getc', 'mnew', 'combinec', 'cdens'],
                    default='renum')
     p.add_argument('--debug', help='Additional output for debugging',
                    action='store_true')
@@ -551,6 +551,24 @@ def main():
             for c in cards:
                 c.get_values()
             d = mn.get_numbers(cards)
+
+
+        elif args.mode == 'cdens':
+            from .mapparsers import cdens
+            # Change density of cells, specified in the map file. Map file
+            m = cdens(args.map)
+
+            for c in cards:
+                if c.ctype == mp.CID.cell:
+                    c.get_values()
+                    for tr in m.keys():
+                        t, r = tr
+                        if t == 'c' and  c.name in r:
+                            c.set_d(m[tr])
+                        if t == 'm' and c.get_m() in r:
+                            c.set_d(m[tr])
+                print(c.card(), end='')
+
 
         elif args.mode == 'tallies':
             # New version: tally number and universes should be specified in the
@@ -1007,7 +1025,7 @@ def main():
             # Combine cells, listed in -c flag.
 
             # Get cells to be combined from command line parameter
-            clst1 = list(rin.expand(args.c.split()))
+            clst1 = map(int, rin.expand(args.c.split()))
 
             # Get the cell geometry
             d = {}
@@ -1588,9 +1606,12 @@ def main():
                     r = ((x[3] - x[1])**2 +
                          (y[3] - y[1])**2 +
                          (z[3] - z[1])**2)**(0.5) * 0.55
-                    print('c ', k, cx, cy, cz, r)
 
-
+                    # Next free surface number:
+                    d = mn.get_numbers(cards)
+                    n = max(d['sur']) + 1
+                    print('c Possible sphere: ', k, n, cx, cy, cz, r)
+                    surfaces[k] = (n, r, n, r)
 
             # Process -u key
             if args.u[-1] in 'xXyYzZ':
@@ -1611,7 +1632,6 @@ def main():
                     n1, v1, n2, v2 = surfaces['s']
                 print_spherical(n2, v2)
 
-
             if args.c != '0':
                 print('c source from -c parameters')
                 vals = list(map(float, args.c.split()))
@@ -1621,49 +1641,6 @@ def main():
                 else:
                     raise ValueError('Wrong number of entries in the -c option')
 
-            # if args.s != '0':
-            #     print('c source from -s parameters')
-            #     nset = set(map(int, args.s.split()))
-            #     sset = {}
-            #     for c in cards:
-            #         if c.ctype == mp.CID.surface:
-            #             c.get_values()
-            #             if c.name in nset:
-            #                 sset[c.name] = c
-            #         elif c.ctype == mp.CID.data:
-            #             break
-
-            #     if len(sset) == 1:
-            #         # -s interpreted as a sphere surface.
-            #         n, c = list(sset.items())[0]
-            #         if c.stype == 'so':
-            #             r = c.scoefs[0]
-            #             x = 0
-            #             y = 0
-            #             z = 0
-            #         elif c.stype == 's':
-            #             x, y, z, r = c.scoefs
-            #         else:
-            #             raise ValueError('Surface {} not a sphere'.format(n))
-            #         print_spherical(n, r)
-
-            #     elif len(sset) == 6:
-            #         # -s is interpreted as a list of px, py and pz planes.
-            #         x = []
-            #         y = []
-            #         z = []
-            #         for n, c in list(sset.items()):
-            #             if c.stype == 'px':
-            #                 x.append(c.scoefs[0])
-            #             elif c.stype == 'py':
-            #                 y.append(c.scoefs[0])
-            #             elif c.stype == 'pz':
-            #                 z.append(c.scoefs[0])
-            #             else:
-            #                 raise ValueError('Surface {} not a px, py or pz plane'.format(n))
-            #         print_planar(sorted(x) + sorted(y) + sorted(z), u=args.u)
-            #     else:
-            #         raise ValueError('Wront number of surfaces in -s option')
 
         elif args.mode == 'fillempty':
             # add 'FILL =' to all void non-filled cells.
@@ -1710,13 +1687,13 @@ def main():
 
         elif args.mode == 'renum':
             import likefunc as lf
-            for c in cards:
-                c.get_values()
-
             if args.map:
                 maps = lf.read_map_file(args.map, log=args.log != '')
             else:
                 maps = {}
+
+            for c in cards:
+                c.get_values()
 
             # index dictionary only if needed:
             if 'i' in (args.c, args.s, args.m, args.u):
@@ -1730,7 +1707,7 @@ def main():
                     maps[t] = imaps[t]
                     maps[t].doc = 'Indexing function for {}'.format(t)
                     maps[t].default = None   # This will raise error if applied to non-existent value
-                else:
+                elif dn != '0':
                     maps[t] = lf.LikeFunction(log=args.log != '')
                     maps[t].default = lf.add_func(int(dn))
 
@@ -1746,7 +1723,8 @@ def main():
                 print(c.card(), end='')
 
             if args.log != '':
-                mapping.write_log_as_map(args.log)
+                for k, m in maps.items():
+                    m.write_log_as_map(k[0], args.log)
 
 
 if __name__ == '__main__':
