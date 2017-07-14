@@ -23,6 +23,9 @@ re_prm = re.compile('((imp:n|imp:p|tmp)\s+\S+)')
 re_prm = re.compile('[it]mp:*[npe]*[=\s]+\S+', flags=re.IGNORECASE)
 re_prm = re.compile('([it]mp:*[npe]*[=\s]+)(\S+)', flags=re.IGNORECASE)
 
+# fill keyword
+re_fll = re.compile('\*{0,1}fill[=\s]+', flags=re.IGNORECASE)
+
 
 # If type specifier not given, any data type can be formatted:
 def fmt_gen(s):
@@ -519,6 +522,8 @@ class Card(object):
         # placefor them. THus, simply replaceing values with spaces will almost
         # do the job. The remaining part -- the keyword itself that is presented
         # in input.
+
+        # replace with spaces all FILL-related tokens
         vals = []  # new values list.
         oldv = self.values[:]
         state = 'before'
@@ -526,18 +531,26 @@ class Card(object):
             v, t = oldv.pop(0)
             if state == 'before' and t == 'fill':
                 v = ' '
-                state = 'after u'
-            elif state == 'after_u' and '(' in t:
+                state = 'afterU'
+            elif state == 'afterU' and '(' in t:
                 v = ' '
-                state = 'after ('
-            elif state == 'after (':
+                state = 'after('
+            elif state == 'after(':
                 v = ' '
                 if ')' in t:
                     state = 'after'
-
             vals.append((v, t))
-
         self.values = vals
+
+        # Remove FILL from the input
+        for n, i in enumerate(self.input):
+            if 'fill' in i.lower():
+                # This part of input contains the fill keyword. This keyword
+                # is optionally prepended with an asterix and followed by a sign
+                i = re_fll.sub(' ', i)
+                self.input[n] = i
+                break
+
         self.print_debug('remove_fill', 'iv')
         return
 

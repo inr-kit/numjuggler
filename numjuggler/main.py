@@ -786,6 +786,12 @@ def main():
                         for c in cl:
                             print(c.card(), end='', file=fout)
 
+                    # create file with blank line delimiter
+                    if k in (mp.CID.cell, mp.CID.surface):
+                        fout = open(args.inp + '.{}z'.format(k), 'w')
+                        print(' ', file=fout)
+                        fout.close()
+
         elif args.mode == 'matan':
             # Compare pairwise mateiral cards. Two materials are compared by
             # their string representation
@@ -1385,7 +1391,6 @@ def main():
 
         elif args.mode == 'nofill':
             # remove all fill= keywords from cell cards.
-            print(' Mode --mode nofill is not implemented yet.')
 
             # First loop: find and remove all FILL keywords. Store universes for
             # the second loop.
@@ -1399,7 +1404,10 @@ def main():
                             uset.add(v)
                             c.remove_fill()
                             break
-                print(c.card(), end='')
+                lines = '\n'.join(filter(lambda s: s.strip(),
+                                         c.card().splitlines()))
+
+                print(lines)
 
             print('Universes used for FILL:', uset)
 
@@ -1572,6 +1580,8 @@ def main():
             # Try to find proper surfaces:
             surfaces = dict(zip('xyzs', (None,)*4))
             for c in cards:
+                if c.ctype == mp.CID.cell:
+                    c.get_values()
                 if c.ctype == mp.CID.surface:
                     c.get_values()
                     if c.stype in ('px', 'py', 'pz', 'so', 's'):
@@ -1609,9 +1619,15 @@ def main():
 
                     # Next free surface number:
                     d = mn.get_numbers(cards)
-                    n = max(d['sur']) + 1
-                    print('c Possible sphere: ', k, n, cx, cy, cz, r)
-                    surfaces[k] = (n, r, n, r)
+                    ns = max(d['sur']) + 1
+                    nc = max(d['cel']) + 1
+                    print('c universe with circumscribing sphere')
+                    print('{} 0  {} imp:n=1 imp:p=1 u=1 '.format(nc, ns))
+                    print('{} 0 {} imp:n=0 imp:p=0 u=1 '.format(nc+1, -ns))
+                    print()
+                    print('c Circumscribing sphere: ')
+                    print(ns, k, cx, cy, cz, r)
+                    surfaces[k] = (ns, r, ns, r)
 
             # Process -u key
             if args.u[-1] in 'xXyYzZ':
