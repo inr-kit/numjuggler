@@ -1392,24 +1392,27 @@ def main():
         elif args.mode == 'nofill':
             # remove all fill= keywords from cell cards.
 
-            # First loop: find and remove all FILL keywords. Store universes for
-            # the second loop.
-            uset = set()
+            # Get universes to withdraw from command line parameters
+            uset = set(rin.expand(args.u.replace('!', ' ').split()))
+
+            # If -u contains !, reverse uset
+            rf = '!' in args.u
+
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     c.get_values()
 
                     for v, t in c.values:
                         if t == 'fill':
-                            uset.add(v)
-                            c.remove_fill()
+                            if (rf ^ v in uset):
+                                uset.add(v)
+                                c.remove_fill()
                             break
                 lines = '\n'.join(filter(lambda s: s.strip(),
                                          c.card().splitlines()))
 
                 print(lines)
 
-            print('Universes used for FILL:', uset)
 
         elif args.mode == 'matinfo':
             # for each material used in cell cards, output list of cells
@@ -1622,8 +1625,8 @@ def main():
                     ns = max(d['sur']) + 1
                     nc = max(d['cel']) + 1
                     print('c universe with circumscribing sphere')
-                    print('{} 0  {} imp:n=1 imp:p=1 u=1 '.format(nc, ns))
-                    print('{} 0 {} imp:n=0 imp:p=0 u=1 '.format(nc+1, -ns))
+                    print('{} 0 {} imp:n=1 imp:p=1 u=1 '.format(nc, -ns))
+                    print('{} 0  {} imp:n=0 imp:p=0 u=1 '.format(nc+1, ns))
                     print()
                     print('c Circumscribing sphere: ')
                     print(ns, k, cx, cy, cz, r)
