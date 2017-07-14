@@ -1,0 +1,6 @@
+# Byte-compiled
+*.pyc
+
+# Editor
+.ropeproject/
+
