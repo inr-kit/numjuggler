@@ -175,6 +175,10 @@ matinfo:
     Output information about how materials are used: for each material list of
     cells with density and universe.
 
+    When -m option is given, it must be the mctal file with calculation of
+    cell volumes (for a tally prepared with the --mode tallies). In this case,
+    additionaly a summary of material weights is printed out.
+
 
 uinfo:
     For each universe defined in the input file, return a list of cells in this
@@ -1444,6 +1448,43 @@ def main():
 
                 for c, d, u in res[m]:
                     print(fmt.format(c, d, u))
+
+            # If -m option is given, try to get cell volumes from there
+            if args.m != '0':
+                from pirs.mcnp.mctal import Mctal
+                mctal = Mctal()
+                mctal.read_complete(args.m)
+                tn, tv = mctal.mctaltallies.items()[0]
+                cn = tv.fnl_numpy    # cell numbers
+                cv = tv.vals_numpy   # cell volumes
+
+                # Compute material weights
+                res = {}   # values are tuples (volume, weight)
+                for c in cards:
+                    if c.ctype == mp.CID.cell:
+                        if c.name in cn:
+                            m = c.get_m()
+                            d = c.get_d()
+                            if m not in res:
+                                res[m] = (0., 0.)
+                            v = cv[0, cn == c.name][0]
+
+                            res[m] = (res[m][0] + v, res[m][1] + v*d)
+                        else:
+                            print('No volume for cell ', c.name)
+                    if c.ctype == mp.CID.surface:
+                        break
+
+                print(('{:>20s}'*3).format('Material', 'Volume', 'Weight'))
+                sv = 0.0
+                sw = 0.0
+                for m, (v, w) in sorted(res.items()):
+                    print('{:20d}{:20e}{:20e}'.format(m, v, w))
+                    if m > 0:
+                        sv += v
+                        sw += w
+                print('{:>20s}{:20e}{:20e}'.format('total nonvoid:', sv, sw))
+
 
         elif args.mode == 'uinfo':
             # for each universe return list of its cells.
