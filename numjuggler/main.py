@@ -1402,10 +1402,10 @@ def main():
             # If -u contains !, reverse uset
             if '!' in args.u:
                 def check(v, s):
-                    return x not in s
+                    return v not in s
             else:
                 def check(v, s):
-                    return x in s
+                    return v in s
 
             for c in cards:
                 if c.ctype == mp.CID.cell:
