@@ -960,7 +960,7 @@ def main():
 
             # Universe number that is used to replace all deleted universes
             # in hte FILL options
-            newfill = sorted(uref)[0]
+            # newfill = sorted(uref)[0]
 
             # get list of cells to be removed
             # and list of surfaces to be preserved
@@ -1004,8 +1004,8 @@ def main():
                                 c.values[i] = ('___', 'cel')
                     # If the cell is filled with a universe to delete,
                     # change its fill to newfill:
-                    if c.get_f() in uref:
-                        c.get_f(newv = newfill)
+                    # if c.get_f() in uref:
+                    #     c.get_f(newv = newfill)
 
                     # Insert additional cell
                     if prevctype == mp.CID.cell and c.ctype == mp.CID.blankline:
@@ -1400,7 +1400,12 @@ def main():
             uset = set(rin.expand(args.u.replace('!', ' ').split()))
 
             # If -u contains !, reverse uset
-            rf = '!' in args.u
+            if '!' in args.u:
+                def check(v, s):
+                    return x not in s
+            else:
+                def check(v, s):
+                    return x in s
 
             for c in cards:
                 if c.ctype == mp.CID.cell:
@@ -1408,8 +1413,7 @@ def main():
 
                     for v, t in c.values:
                         if t == 'fill':
-                            if (rf ^ v in uset):
-                                uset.add(v)
+                            if check(v, uset):
                                 c.remove_fill()
                             break
                 lines = '\n'.join(filter(lambda s: s.strip(),
@@ -1508,9 +1512,9 @@ def main():
                 for u, l in sorted(res.items()):
                     if sflag:
                         l = sorted(l)
-                    print('u{}'.format(u), end='')
+                    print('u{} '.format(u), end='')
                     for e in rin.shorten(l):
-                        print(e, end='')
+                        print(e, end=' ')
                     print()
                     print(len(l))
             else:
