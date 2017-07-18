@@ -7,6 +7,32 @@ import warnings
 import collections
 
 
+class _Range(object):
+    """
+    Represents a range or a point.
+    """
+    def __init__(self, n1, n2=None):
+        if n2 is None:
+            self.n1 = n1
+            self.n2 = None
+        else:
+            n1, n2 = sorted((n1, n2))
+            self.n1 = n1
+            self.n2 = n2
+        return
+
+    def __contains__(self, value):
+        if self.n2 is None:
+            return value == self.n1
+        else:
+            return (self.n1 <= value <= self.n2)
+
+    def __str__(self):
+        if self.n2 is None:
+            return str(self.n1)
+        else:
+            return '[{} -- {}]'.format(self.n1, self.n2)
+
 class LikeFunction(object):
     """
     Class of callables that take two arguments, a number (integer) and a type
@@ -24,13 +50,20 @@ class LikeFunction(object):
         > d['c'] = [dn0, rl]
 
     where dn0 is an integer or callable, and rl is a list of tuples
-    representing ranges and mappring on this range:
+    representing ranges and mappring on this range, or a dictionary representing
+    mapping of separate values. In case rl is a list, its form is:
 
         > rl = [(n1, m1, dn1), (n1, m2, dn2), ...]
 
     where n1 and m1 -- are the first and the last elements in the range of
     numbers mapped with respect to dn1. THe dn1 can be an integer or a
     calalble.
+
+    In case rl is a dictionary, its form is:
+
+        > rl = {n1: m1, n2: m2, ...}
+
+    where n1 -- original value that is mapped to m1.
 
     Mapping dn0 appiled to numbers outside of all ranges in rl. For all dni, if
     it is an integer, the respective mapping is n -> n + dni. If dni is
@@ -58,7 +91,7 @@ class LikeFunction(object):
         else:
             return n + int(f)
 
-    def __get_type(self, t):
+    def __get_mapping(self, t):
         for key in [t, t[0]]:
             if key in self.__p:
                 return self.__p[key]
@@ -66,7 +99,7 @@ class LikeFunction(object):
             return None, None
 
     def __call__(self, n, t):
-        dn0, param = self.__get_type(t)
+        dn0, param = self.__get_mapping(t)
         if (dn0, param) == (None, None):
             # type not found. Do not apply any mapping
             nnew = n
@@ -208,28 +241,86 @@ def read_map_file(fname):
         for l in f:
             ll = l.lower().lstrip()
             if ll and ll[0] in list(td.keys()) and ':' in ll:
-                t = td[ll[0]]
-                rs, os = ll[1:].split(':')
-                rs = rs.replace(' ', '')  # remove spaces from left part
-                os = os.split()[0]        # consider only 1st entry in the right part.
-                if rs == '':
-                    # this is line with default dn. os is always an increment.
-                    d[t][0] = int(os)
+                t, ranges, s, dn = _parse_map_line(ll)
+                t = td[t]
+
+                if ranges:
+                    if not s:
+                        dn = dn - ranges[0][0]
+                    for n1, n2 in ranges:
+                        d[t][1].append((n1, n2, dn))
+
                 else:
-                    if '--' in rs:
-                        # there are two entries in the range definition.
-                        n1, n2 = list(map(int, rs.split('--')))
-                    else:
-                        # only one value is given. Means the one-value-range.
-                        n1 = int(rs)
-                        n2 = n1
-                    # in this case, sign matters:
-                    if os[0] in '+-':
-                        dn = int(os)
-                    else:
-                        dn = int(os) - n1
-                    d[t][1].append((n1, n2, dn))
+                    # default remapping. This is always increment, therefore
+                    # sign s is not relevant
+                    d[t][0] = dn
+
+                # t = td[ll[0]]
+                # rs, os = ll[1:].split(':')
+                # rs = rs.replace(' ', '')  # remove spaces from left part
+                # os = os.split()[0]        # consider only 1st entry in the right part.
+                # if rs == '':
+                #     # this is line with default dn. os is always an increment.
+                #     d[t][0] = int(os)
+                # else:
+                #     if '--' in rs:
+                #         # there are two entries in the range definition.
+                #         n1, n2 = list(map(int, rs.split('--')))
+                #     else:
+                #         # only one value is given. Means the one-value-range.
+                #         n1 = int(rs)
+                #         n2 = n1
+                #     # in this case, sign matters:
+                #     if os[0] in '+-':
+                #         dn = int(os)
+                #     else:
+                #         dn = int(os) - n1
+                #     d[t][1].append((n1, n2, dn))
     return d
+
+
+def _parse_map_line(l):
+    """
+    For the map lie returns t, list of ranges and dn.
+    """
+    # range type
+    t = l[0]
+
+    rs, os = l[1:].split(':')
+
+    # Allow commas and no spaces in ranges
+    rs = rs.replace('--', ' -- ').replace(',' ' ')
+    # Use only 1-st entry in the map rule
+    os = os.split()[0].lstrip()
+
+    # Sign and dn
+    dn = int(os)
+    if os[0] in '-+':
+        sign = True
+    else:
+        sign = False
+
+    ranges = list(_get_map_ranges(rs))
+    return t, ranges, sign, dn
+
+
+def _get_map_ranges(s):
+    tl = (s + ' 0').split()
+
+    v1 = None
+    is_range = False
+    for t in tl:
+        if t == '--':
+            is_range = True
+        else:
+            if is_range:
+                yield v1, int(t)
+                v1 = None
+                is_range = False
+            else:
+                if v1 is not None:
+                    yield v1, v1
+                v1 = int(t)
 
 
 if __name__ == '__main__':

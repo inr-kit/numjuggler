@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Functions for parsing MCNP input files.
 """
@@ -20,6 +22,9 @@ re_rpt = re.compile('\d+[ri]', flags=re.IGNORECASE)
 re_prm = re.compile('((imp:n|imp:p|tmp)\s+\S+)')
 re_prm = re.compile('[it]mp:*[npe]*[=\s]+\S+', flags=re.IGNORECASE)
 re_prm = re.compile('([it]mp:*[npe]*[=\s]+)(\S+)', flags=re.IGNORECASE)
+
+# fill keyword
+re_fll = re.compile('\*{0,1}fill[=\s]+', flags=re.IGNORECASE)
 
 
 # If type specifier not given, any data type can be formatted:
@@ -115,8 +120,8 @@ class Card(object):
         self.values = []
 
         # geometry prefix and suffix
-        self.geom_prefix = ''
-        self.geom_suffix = ''
+        # self.geom_prefix = ''
+        # self.geom_suffix = ''
 
         # some properties defined on demand
         # cell properties
@@ -134,12 +139,48 @@ class Card(object):
         self.get_input()
         return
 
+    def _get_value_by_type(self, t):
+        """
+        Returns the first value of type t found in self.values.
+        """
+        vl, tl = zip(*self.values)
+        try:
+            i = tl.index(t)
+        except ValueError:
+            return None
+        finally:
+            return vl[i]
+
+    def _set_value_by_type(self, t, v):
+        """
+        Sets the first value of type t to v in self.values.
+        """
+        vl, tl = zip(*self.values)
+        i = tl.index(t)
+        self.values[i] = (v, t)
+
+    @property
+    def geom_prefix(self):
+        return self._get_value_by_type('#gpr')
+
+    @geom_prefix.setter
+    def geom_prefix(self, value):
+        return self._set_value_by_type('#gpr', value)
+
+    @property
+    def geom_suffix(self):
+        return self._get_value_by_type('#gsu')
+
+    @geom_suffix.setter
+    def geom_suffix(self, value):
+        return self._set_value_by_type('#gsu', value)
+
     def print_debug(self, comment, key='tihv'):
         d = self.debug
         if d:
             print('Line {}, {} card. {}'.format(self.pos,
-                                                      CID.get_name(self.ctype),
-                                                      comment), file=d)
+                                                CID.get_name(self.ctype),
+                                                comment), file=d)
             if 't' in key:
                 print('    template:', repr(self.template), file=d)
             if 'i' in key:
@@ -207,6 +248,9 @@ class Card(object):
                         tmpl.append(fmt_s(i) + t)
             self.input = inpt
             self.template = ''.join(tmpl)
+
+            # TODO: dtype and name of the card can be defined already here.
+
         self.print_debug('get_input', 'ti')
         return
 
@@ -286,6 +330,8 @@ class Card(object):
                 unit, inpt, fvals = _parse_tr(inpt)
                 self.unit = unit
                 vt += fvals
+            if self.dtype is not None:
+                self.name = vt[0][0]
         else:
             inpt = self.input
             vt = []
@@ -311,6 +357,19 @@ class Card(object):
                     s.add(v)
             self.__cr = s
             return self.__cr
+
+    def get_geom(self):
+        """
+        Returns part of the cell card describing geometry, as a (multiline)
+        string.
+        """
+        p, s = self.geom_prefix, self.geom_suffix
+        self.geom_prefix = '§'
+        self.geom_suffix = '§'
+        geom = self.card().split('§')[1]
+        self.geom_prefix = p
+        self.geom_suffix = s
+        return geom
 
     def get_u(self):
         """
@@ -371,6 +430,16 @@ class Card(object):
             # entry in self.hidden dictionary.
             self.__d = float(self.hidden['~'][0])
             return self.__d
+
+    def set_d(self, v):
+        """
+        Set density. Accespted are string represetntaion of a float.
+
+        It is assumed that get_values() method is called before this.
+        """
+        if self.get_m() > 0:
+            self.hidden['~'][0] = v
+            self.__d = float(v)
 
     def get_f(self, newv=None):
         """
@@ -453,6 +522,8 @@ class Card(object):
         # placefor them. THus, simply replaceing values with spaces will almost
         # do the job. The remaining part -- the keyword itself that is presented
         # in input.
+
+        # replace with spaces all FILL-related tokens
         vals = []  # new values list.
         oldv = self.values[:]
         state = 'before'
@@ -460,18 +531,26 @@ class Card(object):
             v, t = oldv.pop(0)
             if state == 'before' and t == 'fill':
                 v = ' '
-                state = 'after u'
-            elif state == 'after_u' and '(' in t:
+                state = 'afterU'
+            elif state == 'afterU' and '(' in t:
                 v = ' '
-                state = 'after ('
-            elif state == 'after (':
+                state = 'after('
+            elif state == 'after(':
                 v = ' '
                 if ')' in t:
                     state = 'after'
-
             vals.append((v, t))
-
         self.values = vals
+
+        # Remove FILL from the input
+        for n, i in enumerate(self.input):
+            if 'fill' in i.lower():
+                # This part of input contains the fill keyword. This keyword
+                # is optionally prepended with an asterix and followed by a sign
+                i = re_fll.sub(' ', i)
+                self.input[n] = i
+                break
+
         self.print_debug('remove_fill', 'iv')
         return
 
@@ -479,15 +558,15 @@ class Card(object):
         """
         Return multi-line string representing the card.
         """
-        if self.ctype == CID.cell and self.geom_prefix + self.geom_suffix != '':
-            newvals = []
-            for v, t in self.values:
-                if t == '#gpr':
-                    v = self.geom_prefix
-                elif t == '#gsu':
-                    v = self.geom_suffix
-                newvals.append((v, t))
-            self.values = newvals
+        # if self.ctype == CID.cell and self.geom_prefix + self.geom_suffix != '':
+        #     newvals = []
+        #     for v, t in self.values:
+        #         if t == '#gpr':
+        #             v = self.geom_prefix
+        #         elif t == '#gsu':
+        #             v = self.geom_suffix
+        #         newvals.append((v, t))
+        #     self.values = newvals
 
         if self.input:
             # put values back to meaningful parts:
@@ -538,7 +617,8 @@ class Card(object):
                                 # there is no proper place to wrap.
                                 self.print_debug('Cannot wrap line ' +
                                                  repr(i), '')
-                                warnings.warn('Cannot wrap card on line {}'.format(self.pos))
+                                warnings.warn('Cannot wrap card'
+                                              ' on line {}'.format(self.pos))
                                 break
                         else:
                             # input i fits to one line. Do nothing.
@@ -596,45 +676,50 @@ class Card(object):
                 t1 = 'u'
             else:
                 t1 = t[1]
-            newvals.append((f(t[0], t1), t[1]))
+            # newvals.append((f(t[0], t1), t[1]))
+            if t1 in f:
+                newval = f[t1](t[0])
+            else:
+                newval = t[0]
+            newvals.append((newval, t[1]))
         self.values = newvals
         self.print_debug('after apply_map', 'vi')
         return
 
 
-def _parse_geom(geom):
-    """
-    Parse the geometry part of a cell card.
-    """
-    raise NotImplementedError()
-    t = geom.split()
-    vals = []
-    fmts = []
-
-    # cell name
-    js = t.pop(0)
-    geom = geom.replace(js, tp, 1)
-    vals.append((int(js), 'cel'))
-    fmts.append(fmt_d(js))
-
-    if 'like' in geom.lower():
-        # this is like-but syntax
-        pass
-    else:
-        # get material and density.
-        # Density, if specified in cells card, should be allready hidden
-        ms = t.pop(0)
-        if int(ms) == 0:
-            inpt = inpt.replace(ms, tp+tp , 1)
-        else:
-            inpt = inpt.replace(ms, tp, 1)
-            inpt = inpt.replace('~', '~'+tp, 1)
-        vals.append((int(ms), 'mat'))
-        fmts.append(fmt_d(ms))
-
-        # placeholder for geometry prefix
-        vals.append(('', '#gpr'))
-        fmts.append('{}')
+# def _parse_geom(geom):
+#     """
+#     Parse the geometry part of a cell card.
+#     """
+#     raise NotImplementedError()
+#     t = geom.split()
+#     vals = []
+#     fmts = []
+#
+#     # cell name
+#     js = t.pop(0)
+#     geom = geom.replace(js, tp, 1)
+#     vals.append((int(js), 'cel'))
+#     fmts.append(fmt_d(js))
+#
+#     if 'like' in geom.lower():
+#         # this is like-but syntax
+#         pass
+#     else:
+#         # get material and density.
+#         # Density, if specified in cells card, should be allready hidden
+#         ms = t.pop(0)
+#         if int(ms) == 0:
+#             inpt = inpt.replace(ms, tp+tp , 1)
+#         else:
+#             inpt = inpt.replace(ms, tp, 1)
+#             inpt = inpt.replace('~', '~'+tp, 1)
+#         vals.append((int(ms), 'mat'))
+#         fmts.append(fmt_d(ms))
+#
+#         # placeholder for geometry prefix
+#         vals.append(('', '#gpr'))
+#         fmts.append('{}')
 
 
 def _split_cell(input_, self):
@@ -803,7 +888,7 @@ def _split_cell(input_, self):
                 vsl.append('(')
                 vvl.append('(')
                 vfl.append(fmt_s('('))
-                vtl.append('#(')  # types starting with '#' are internal types, not to be output in --mode info.
+                vtl.append('#(')  # #-types are internal, don't output in --mode info.
                 t[0] = t[0].replace('(', '', 1)
 
                 # add entries in parentheses and the closing parenthis
