@@ -597,7 +597,8 @@ class Card(object):
                     il = []
                     tl = [t]
 
-                    while len(i.rstrip()) > 79:
+                    # while len(i.rstrip()) > 79:
+                    while len(i.rstrip()) > 80:
                         # first try to shift to left
                         if i[:5] == ' '*5:
                             i = ' '*5 + i.lstrip()
