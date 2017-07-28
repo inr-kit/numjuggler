@@ -1624,6 +1624,11 @@ def main():
                 """
                 print('sdef sur {} nrm -1 wgt {:12.7e}'.format(s, Pi * r**2))
 
+            # Set of surface names to be checked for surface source candidates
+            sset = set()
+            if args.s != '0':
+                sset = set(rin.expand(args.s.split()))
+
 
             # Try to find proper surfaces:
             surfaces = dict(zip('xyzs', (None,)*4))
@@ -1632,28 +1637,29 @@ def main():
                     c.get_values()
                 if c.ctype == mp.CID.surface:
                     c.get_values()
-                    if c.stype in ('px', 'py', 'pz', 'so', 's'):
-                        # this is surface-candidate. Check its parameters:
-                        k = c.stype.replace('p', '').replace('o', '')
-                        if k == 'p':
-                            v = c.scoefs[0]  # plane position
-                        else:
-                            v = c.scoefs[-1] # sphere radius
-                        if surfaces[k] is None:
-                            surfaces[k] = (c.name, v, c.name, v)
-                        else:
-                            n1, v1, n2, v2 = surfaces[k]
-                            if v1 > v:
-                                surfaces[k] = (c.name, v, n2, v2)
-                            if v2 < v:
-                                surfaces[k] = (n1, v1, c.name, v)
+                    if not sset or c.name in sset:
+                        if c.stype in ('px', 'py', 'pz', 'so', 's'):
+                            # this is surface-candidate. Check its parameters:
+                            k = c.stype.replace('p', '').replace('o', '')
+                            if k == 'p':
+                                v = c.scoefs[0]  # plane position
+                            else:
+                                v = c.scoefs[-1] # sphere radius
+                            if surfaces[k] is None:
+                                surfaces[k] = (c.name, v, c.name, v)
+                            else:
+                                n1, v1, n2, v2 = surfaces[k]
+                                if v1 > v:
+                                    surfaces[k] = (c.name, v, n2, v2)
+                                if v2 < v:
+                                    surfaces[k] = (n1, v1, c.name, v)
 
             for k, v in surfaces.items():
                 if v is not None:
                     n1, v1, n2, v2 = v
                     print('c ', k, n1, v1)
                     print('c ', k, n2, v2)
-                elif k == 's':
+                elif k == 's' and args.s in 'sS':
                     # propose parameters of the circumscribing sphere
                     x = surfaces['x']
                     y = surfaces['y']
