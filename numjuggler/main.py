@@ -1653,13 +1653,13 @@ def main():
                                     surfaces[k] = (c.name, v, n2, v2)
                                 if v2 < v:
                                     surfaces[k] = (n1, v1, c.name, v)
-
+            print_sdef = True
             for k, v in surfaces.items():
                 if v is not None:
                     n1, v1, n2, v2 = v
                     print('c ', k, n1, v1)
                     print('c ', k, n2, v2)
-                elif k == 's' and args.s in 'sS':
+                elif k == 's' and args.u in 'sS':
                     # propose parameters of the circumscribing sphere
                     x = surfaces['x']
                     y = surfaces['y']
@@ -1682,6 +1682,7 @@ def main():
                     print('c Circumscribing sphere: ')
                     print(ns, k, cx, cy, cz, r)
                     surfaces[k] = (ns, r, ns, r)
+                    print_sdef = False
 
             # Process -u key
             if args.u[-1] in 'xXyYzZ':
@@ -1700,7 +1701,8 @@ def main():
                     raise ValueError('Spheres not found for spherical source')
                 else:
                     n1, v1, n2, v2 = surfaces['s']
-                print_spherical(n2, v2)
+                if print_sdef:
+                    print_spherical(n2, v2)
 
             if args.c != '0':
                 print('c source from -c parameters')
