@@ -1301,11 +1301,14 @@ def are_close_vals(x, y, re=1e-6, ra=0.):
 
 def are_close_lists(x, y, re=1e-6, pci=[]):
     """
-    Return True if x and y are close.
+    Return True if x and y are close but not equal.
     """
     if len(x) != len(y):
         res = False
         msg = 'Different lenght'
+
+    if x == y:
+        return False
 
     # pci -- list of indices that define elements of x and y to be checked for
     # proportionality only.
@@ -1364,13 +1367,6 @@ def are_close_lists(x, y, re=1e-6, pci=[]):
 
     else:
         result = True
-    # print 'are_equal', x, y, re, pci
-    # for xl, yl, r, m in zip([xe, xp], [ye, yp], res, msg):
-    #     print ' '*5, m, r, ':'
-    #     print ' '*15, xl
-    #     print ' '*15, yl
-    #     if r:
-    #         break
     return result
 
 

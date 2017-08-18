@@ -176,8 +176,13 @@ matinfo:
     cells with density and universe.
 
     When -m option is given, it must be the mctal file with calculation of
-    cell volumes (for a tally prepared with the --mode tallies). In this case,
-    additionaly a summary of material weights is printed out.
+    cell volumes, followed by the tally number (for a tally prepared with the
+    --mode tallies). In this case,  additionaly a summary of material weights
+    is printed out.
+
+    Example: read tally 14 from file `inp_m` to compute material masses
+
+    >numjuggler --mode matinfo -m "inp_m 14" inp_ > inp_.matinfo
 
 
 uinfo:
@@ -578,7 +583,8 @@ def main():
             # New version: tally number and universes should be specified in the
             # format string passed via -m argument.  -m must be present and have
             # form: 'f4:n (u4 < u5)', where uN -- placeholders for lists of
-            # cells that belong to universe N.
+            # cells that belong to universe N. Usual cell numbers can be used
+            # as well.
 
             import re
             r = re.compile('(u)(\d+)')
@@ -888,26 +894,25 @@ def main():
                 if c.ctype == mp.CID.surface:
                     # compare this surface with all previous and if unique, add
                     # to dict
-                    ust = us.get(c.stype, {})
-                    if ust == {}:
-                        us[c.stype] = ust
+                    if c.stype not in us.keys():
+                        us[c.stype] = {}
+                    ust = us[c.stype]
                     for sn, s in list(ust.items()):
-                        if s.stype == c.stype:
-                            # current surface card and s have the same type.
-                            # Compare coefficients:
-                            if mp.are_close_lists(s.scoefs,
-                                                  c.scoefs,
-                                                  pci=pcl.get(c.stype, [])):
-                                print(c.card(comment=False))
-                                print(s.card(comment=False))
-                                print()
-                                # print 'is close to {}'.format(sn)
-                                break
+                        if mp.are_close_lists(s.scoefs, c.scoefs,
+                                              pci=pcl.get(c.stype, [])):
+                            # If c is close to s, print s instead
+                            s.values[0] = (c.values[0][0], s.values[0][1])
+                            print(s.card(), end='')
+                            s.values[0] = (sn, s.values[0][1])
+                            break
                     else:
                         # add c to us:
                         cn = c.values[0][0]  # surface name
                         ust[cn] = c
+                        print(c.card(), end='')
                         # print 'is unique'
+                else:
+                    print(c.card(), end='')
 
         elif args.mode == 'msimp':
             # simplify material cards
@@ -1454,11 +1459,15 @@ def main():
                     print(fmt.format(c, d, u))
 
             # If -m option is given, try to get cell volumes from there
+            # -m argument is the mctal name followed by tally number of the
+            # tally containing cell volumes.
             if args.m != '0':
                 from pirs.mcnp.mctal import Mctal
                 mctal = Mctal()
-                mctal.read_complete(args.m)
-                tn, tv = mctal.mctaltallies.items()[0]
+                fname, tn = args.m.split()
+                tn = int(tn)
+                mctal.read_complete(fname)
+                tv = mctal.mctaltallies[tn]
                 cn = tv.fnl_numpy    # cell numbers
                 cv = tv.vals_numpy   # cell volumes
 
