@@ -10,6 +10,10 @@ from numjuggler import parser as mp
 from numjuggler import ri_notation as rin
 
 
+def multiline(lines, prefix=''):
+    return prefix + ('\n' + prefix).join(lines)
+
+
 # help messages already wrapped:
 help_c = """
 Cell number increment. If an integer is given, it is added to all cell numbers
@@ -481,7 +485,7 @@ def main():
                    type=str,
                    choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'remc',
                             'split', 'mdupl', 'matan', 'sdupl', 'msimp', 'extr',
-                            'nogq', 'count', 'nofill', 'matinfo', 'uinfo',
+                            'nogq', 'nogq2', 'count', 'nofill', 'matinfo', 'uinfo',
                             'impinfo', 'fillempty', 'sinfo', 'vsource',
                             'tallies', 'addgeom', 'merge', 'remu', 'zrotate',
                             'annotate', 'getc', 'mnew', 'combinec', 'cdens'],
@@ -1349,6 +1353,79 @@ def main():
                             crd += '{} {} c/z {:15.8e} 0 {:15.8e}\n'.format(
                                 c.name, trn + trn0, x0, R)
                             crd += 'c a^2={:12.6e} g={:12.6e} k={}\n'.format(a2, g, kk)
+                print(crd, end='')
+                if trd and c.ctype == mp.CID.blankline:
+                    # this is blankline after surfaces. Put tr cards here
+                    for k, v in sorted(trd.items()):
+                        ijk = (k + trn0,) + v
+                        print(tfmt.format(*ijk))
+                    trd = {}
+
+        elif args.mode == 'nogq2':
+            from numjuggler import nogq2
+            trn0 = int(args.t)
+            cflag = False if args.c == "0" else True
+
+            vfmt = ' {:15.8e}'
+            tfmt = 'tr{} 0 0 0  ' + ('\n     ' + 3*vfmt) * 3
+            cfmt = '{} {}  {}  ' + 3*vfmt + '\n'
+            trd = {}
+            # replace GQ cylinders with c/x + tr
+            for c in cards:
+                crd = c.card()
+                if c.ctype == mp.CID.surface:
+                    c.get_values()
+                    if c.stype == 'gq':
+                        tuf, pl = nogq2.get_params(' '.join(c.input))
+                        typ, a, o, t21, r2, cl = nogq2.get_cone_or_cylinder(pl)
+                        crd1 = crd.splitlines()
+                        if typ in 'ck' and not tuf:
+                            bbb, aaa = nogq2.basis_on_axis(a)
+                            # bbb is the basis, where the cylinder/cone axis is
+                            # parallel to axis aaa. In this basis, the origin o
+                            # of the cylinder/cone is:
+                            oprime = nogq2.transform(o, bbb, (0, 0, 0))
+                            # add transformation set
+                            tr = sum(bbb, ())  # sum of 3 3-tuples is a 9-tuple
+                            if aaa == 'x':
+                                c1 = oprime[1]
+                                c2 = oprime[2]
+                            elif aaa == 'y':
+                                c1 = oprime[0]
+                                c2 = oprime[2]
+                            else:
+                                c1 = oprime[0]
+                                c2 = oprime[1]
+                            for k, v in trd.items():
+                                if tr == v:
+                                    trn = k
+                                    break
+                            else:
+                                trn = len(trd) + 1
+                                trd[trn] = tr
+                            # Comment the original surface card and add
+                            # information about type, axis, origin and params
+                            if cflag:
+                                crd = multiline(crd1 + cl, 'c ') + '\n'
+                            else:
+                                crd = ''
+
+                            if typ == 'c':
+                                aaa = 'c/' + aaa
+                                p = r2**0.5  # cylinder radius
+                            elif typ == 'k':
+                                aaa = 'k/' + aaa
+                                p = t21 - 1.0  # square tan of half-angle
+                            crd += cfmt.format(c.name,
+                                               trn + trn0, aaa, c1, c2, p)
+                        elif tuf:
+                            # GQ with transform, do not modify
+                            crd = multiline(crd1) + '\n'
+                        else:
+                            # failed to convert GQ card. Use the original one
+                            # and print additional information
+                            crd = multiline(crd1 + cl) + '\n'
+
                 print(crd, end='')
                 if trd and c.ctype == mp.CID.blankline:
                     # this is blankline after surfaces. Put tr cards here
