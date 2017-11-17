@@ -1352,7 +1352,7 @@ def main():
                                 crd = ''
                             crd += '{} {} c/z {:15.8e} 0 {:15.8e}\n'.format(
                                 c.name, trn + trn0, x0, R)
-                            crd += 'c a^2={:12.6e} g={:12.6e} k={}\n'.format(a2, g, kk)
+                            # crd += 'c a^2={:12.6e} g={:12.6e} k={}\n'.format(a2, g, kk)
                 print(crd, end='')
                 if trd and c.ctype == mp.CID.blankline:
                     # this is blankline after surfaces. Put tr cards here
