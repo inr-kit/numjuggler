@@ -1579,6 +1579,7 @@ def main():
         elif args.mode == 'uinfo':
             # for each universe return list of its cells.
             res = {}
+            fd = {}  # dictionary of cells, filled with another universe
 
             # flag to sort cells in the output list:
             sflag = False if args.s == "0" else True
@@ -1586,6 +1587,7 @@ def main():
                 if c.ctype == mp.CID.cell:
                     c.get_values()
                     u = c.get_u()
+                    f = c.get_f()
                     u = 0 if u is None else u
                     l = res.get(u, [])
                     if not l:
@@ -1610,6 +1612,13 @@ def main():
                     l = sorted(l)
                 for e in rin.shorten(l):
                     print(e, end='')
+            # print tabulated "tree", see E-mail of Marco Fabri, 8.11.2017
+            for u, cl in sorted(res.keys()):
+                print('Cells in universe ', u)
+                for c in cl:
+                    print(c, fd.get(c, ''))
+
+
 
         elif args.mode == 'impinfo':
 
