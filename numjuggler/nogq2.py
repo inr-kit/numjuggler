@@ -15,11 +15,11 @@ def areclose(l, rtol=1e-4, atol=1e-7, cmnt=None):
     if cmnt is not None:
         # assume it is a list of comments. Add here information
         c = cmnt.append
-        c('     Are close check:')
-        c('     B - A <= atol and <= rtol*b')
-        c('     B - A:  {:15.8e}'.format(B - A))
-        c('     atol:   {:15.8e}'.format(atol))
-        c('     rtol*b: {:15.8e}'.format(rtol*b))
+        c('c     Are close check:')
+        c('c     B - A <= atol and <= rtol*b')
+        c('c     B - A:  {:15.8e}'.format(B - A))
+        c('c     atol:   {:15.8e}'.format(atol))
+        c('c     rtol*b: {:15.8e}'.format(rtol*b))
     return B - A <= atol and B - A <= rtol*b
 
 
@@ -54,7 +54,7 @@ def get_cone_or_cylinder(pl):
     c('c t^2 + 1: {:15.8e}'.format(t21))
 
     ccc = []
-    if areclose((1.0, t21), atol=2e-7, cmnt=ccc):
+    if areclose((1.0, t21), atol=2e-7, rtol=None, cmnt=ccc):
         typ, axis, orig, t21, r2, cmn2 = get_cylinder(pl)
         return typ, axis, orig, t21, r2, cmnt + cmn2
     elif t21 < 1.0:
@@ -88,7 +88,7 @@ def get_cylinder(pl):
     if r2 < 0.0:
         c('c Negative square of cylinder radius')
         return 'o', None, None, None, None, cmnt
-    if areclose((0.0, r2)):
+    if areclose((0.0, r2), rtol=None):
         c('c WARNING: r^2 is close to zero')
     return  'c', (xn, yn, zn), (x0, y0, z0), t21, r2, cmnt
 
@@ -180,7 +180,7 @@ def get_direction(pl):
     c('c E^2 (1 - A):      {:15.8e}'.format(e2))
     c('c F^2 (1 - B):      {:15.8e}'.format(e3))
     c('c 4 t21^3 xnynzn^2: {:15.8e}'.format(e4))
-    if not areclose((e1, e2, e3, e4), cmnt=cmnts):
+    if not areclose((e1, e2, e3, e4), rtol=None, cmnt=cmnts):
         c('c Consistensy check fails')
         return t21, None, None, None, cmnts
     return t21, xn, yn, zn, cmnts
@@ -265,7 +265,7 @@ def check_basis(i, j, k):
     ij = scalar_product(i, j)
     ik = scalar_product(i, k)
     jk = scalar_product(j, k)
-    if not areclose((ij, ik, jk, 0.0), rtol=2):
+    if not areclose((ij, ik, jk, 0.0), rtol=None):
         print 'i', vf.format(*i)
         print 'j', vf.format(*j)
         print 'k', vf.format(*k)
