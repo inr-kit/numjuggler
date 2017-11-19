@@ -1139,6 +1139,44 @@ def is_blankline(l):
 
 def get_cards(inp, debug=None):
     """
+    Check first existence of a dump file
+
+    If dump exists and it is newwer than the input file, read the dump file
+    """
+    from os import stat
+    iname = inp
+    dname = '.{}.~'.format(inp)
+    try:
+        it = stat(iname).st_mtime
+    except OSError as e:
+        raise e
+
+    try:
+        dt = stat(dname).st_mtime
+    except OSError:
+        print('No dump file exists')
+        dt = it - 1.0
+    if it < dt:
+        print('Reading from dump')
+        # dump is youger
+        import cPickle
+        dfile = open(dname, 'r')
+        cl = cPickle.load(dfile)
+        for c in cl:
+            yield c
+    else:
+        print('Reading from input')
+        cl = []
+        for c in get_cards_from_input(inp, debug=debug):
+            yield c
+            cl.append(c)
+        import cPickle
+        dfile = open(dname, 'w')
+        cPickle.dump(cl, dfile)
+
+
+def get_cards_from_input(inp, debug=None):
+    """
     Iterable, return instances of the Card() class representing
     cards in the input file.
 
