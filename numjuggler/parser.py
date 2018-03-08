@@ -1154,10 +1154,10 @@ def get_cards(inp, debug=None):
     try:
         dt = stat(dname).st_mtime
     except OSError:
-        print('No dump file exists')
+        # print('No dump file exists')
         dt = it - 1.0
     if it < dt:
-        print('Reading from dump')
+        # print('Reading from dump')
         # dump is youger
         import cPickle
         dfile = open(dname, 'r')
@@ -1165,7 +1165,7 @@ def get_cards(inp, debug=None):
         for c in cl:
             yield c
     else:
-        print('Reading from input')
+        # print('Reading from input')
         cl = []
         for c in get_cards_from_input(inp, debug=debug):
             yield c
