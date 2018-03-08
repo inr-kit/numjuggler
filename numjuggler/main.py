@@ -1210,10 +1210,18 @@ def main():
                     aset.add(c.name)
 
             if args.u != '0':
+                if '_' in args.u:
+                    extract_parents_flag = False
+                    args.u = args.u.replace('_', ' ')
+                else:
+                    extract_parents_flag = True
                 uref = int(args.u)
                 for c in cards:
-                    if c.ctype == mp.CID.cell and c.get_u() == uref:
-                        cset.add(c.name)
+                    if c.ctype == mp.CID.cell:
+                        u = c.get_u()
+                        u = 0 if u is None else u
+                        if u == uref:
+                            cset.add(c.name)
 
             # '!' means that the specified cells should NOT be extracted, but
             # all other.
@@ -1238,7 +1246,7 @@ def main():
                     if c.name in cset:
                         if c.get_f() is not None:
                             uset.add(c.get_f())
-                        if c.get_u() is not None:
+                        if extract_parents_flag and c.get_u() is not None:
                             fset.add(c.get_u())
 
             # next runs: find all other cells:
@@ -1613,7 +1621,7 @@ def main():
                 for e in rin.shorten(l):
                     print(e, end='')
             # print tabulated "tree", see E-mail of Marco Fabri, 8.11.2017
-            for u, cl in sorted(res.keys()):
+            for u, cl in sorted(res.items()):
                 print('Cells in universe ', u)
                 for c in cl:
                     print(c, fd.get(c, ''))
