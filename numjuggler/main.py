@@ -1209,6 +1209,7 @@ def main():
                 if c.ctype == mp.CID.cell:
                     aset.add(c.name)
 
+            extract_parents_flag = True
             if args.u != '0':
                 if '_' in args.u:
                     extract_parents_flag = False
