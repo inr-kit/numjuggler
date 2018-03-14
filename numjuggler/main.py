@@ -1245,7 +1245,7 @@ def main():
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     if c.name in cset:
-                        if c.get_f() is not None:
+                        if extract_parents_flag and c.get_f() is not None:
                             uset.add(c.get_f())
                         if extract_parents_flag and c.get_u() is not None:
                             fset.add(c.get_u())
@@ -1378,6 +1378,7 @@ def main():
             vfmt = ' {:15.8e}'
             tfmt = 'tr{} 0 0 0  ' + ('\n     ' + 3*vfmt) * 3
             cfmt = '{} {}  {}  ' + 3*vfmt + '\n'
+            kfmt = '{} {}  {}  ' + 4*vfmt + '\n'
             trd = {}
             # replace GQ cylinders with c/x + tr
             for c in cards:
@@ -1424,11 +1425,18 @@ def main():
                             if typ == 'c':
                                 aaa = 'c/' + aaa
                                 p = r2**0.5  # cylinder radius
+                                crd += cfmt.format(c.name,
+                                                   trn + trn0,
+                                                   aaa,
+                                                   c1, c2, p)
                             elif typ == 'k':
                                 aaa = 'k/' + aaa
                                 p = t2  # square tan of half-angle
-                            crd += cfmt.format(c.name,
-                                               trn + trn0, aaa, c1, c2, p)
+                                c0, c1, c2 = oprime
+                                crd += kfmt.format(c.name,
+                                                   trn + trn0,
+                                                   aaa,
+                                                   c0, c1, c2, p)
                         elif tuf:
                             # GQ with transform, do not modify
                             crd = multiline(crd1) + '\n'

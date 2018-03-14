@@ -1,4 +1,4 @@
-from math import copysign
+from math import copysign, isnan
 
 
 def areclose(l, rtol=1e-4, atol=1e-7, cmnt=None, name='', detailed=True):
@@ -157,8 +157,8 @@ def get_cone_or_cyl(pl):
         cmnt.append('          R0c + r: {:15.8e}'.format(d2))
         cmnt.append('          R0c - r: {:15.8e}'.format(d3))
 
-        # Criteria for cone
         if r2k >= 0 and d0 is not float('nan') and abs(d0) < min(abs(d2), abs(d3)):
+            # Criteria for cone
             typ = 'k'
             org = R0k
             r2 = r2k
@@ -167,6 +167,9 @@ def get_cone_or_cyl(pl):
             org = R0c
             r2 = r2c
         else:
+            typ = 'o'
+
+        if isnan(sum(n + org + (r2, t2))):
             typ = 'o'
 
         cmnt.append('    typ: ' + typ)
@@ -331,7 +334,7 @@ def check_basis(i, j, k):
     jl = scalar_product(j, j)
     kl = scalar_product(k, k)
     cmnt = []
-    if not areclose((il, jl, kl, 1.0), atol=1e-7, rtol=None, cmnt=cmnt):
+    if not areclose((il, jl, kl, 1.0), atol=1e-7, rtol=None, cmnt=cmnt, name='Basis vector normalization'):
         for comment in cmnt:
             print(comment)
         print('Basis vectors not normal')
