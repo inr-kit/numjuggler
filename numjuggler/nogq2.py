@@ -1,7 +1,7 @@
 from math import copysign
 
 
-def areclose(l, rtol=1e-4, atol=1e-7, cmnt=None, name=''):
+def areclose(l, rtol=1e-4, atol=1e-7, cmnt=None, name='', detailed=True):
     """
     Check if all elements in the list l are close to each other.
 
@@ -31,16 +31,14 @@ def areclose(l, rtol=1e-4, atol=1e-7, cmnt=None, name=''):
     if cmnt is not None:
         # assume it is a list of comments. Add here information
         c = cmnt.append
-        if name:
-            c('c     Are close check: ' + name + ': {}'.format(result))
-        else:
-            c('c     values: ' + ' '.join('{:15.8e}'.format(v) for v in l))
-            c('c     B:      {:15.8e}'.format(B))
-            c('c     A:      {:15.8e}'.format(A))
-            c('c     B - A:  {:15.8e}'.format(B - A))
-            c('c     atol:   ' + astr)
-            c('c     rtol*b: ' + rstr)
-            c('c     check result: {}'.format(result))
+        c('Are close check: ' + name + ': {}'.format(result))
+        if detailed:
+            c('  values: ' + ' '.join('{:15.8e}'.format(v) for v in l))
+            c('  B:      {:15.8e}'.format(B))
+            c('  A:      {:15.8e}'.format(A))
+            c('  B - A:  {:15.8e}'.format(B - A))
+            c('  atol:   ' + astr)
+            c('  rtol*b: ' + rstr)
     return result
 
 
@@ -54,269 +52,155 @@ def get_params(card):
     return tr, map(float, p2.split())
 
 
-def get_cone_or_cylinder(pl):
+def get_cone_or_cyl(pl):
     """
-    Components of the cone/cylinder axis, xn, yn and zn, can be defined from
-    the equations for A, B and C. For a cone, these equations can also be used
-    to define the cone angle.
-
-    For a cylinder,
-
-    Coefficients D, E and F also depend on the cone angle and xn, yn, zn. These
-    equations are used to check if the set A -- K describes a cone/cylinder.
+    See notes from 14.03.2018
     """
+    cmnt = []
 
-    # If parameters pl are exact and represent a cylinder, t2 is 0. If pl
-    # represent a cone, r2 is 0. Thus, without rounding errors, the criteria
-    # for cylinder:
-    #
-    #   t2 = 0
-    #   pl are consistent for cylinder
-    #
-    # and criteria for cone:
-    #
-    #   r2 = 0
-    #   pl are consistenr for cone.
-    #
-    # Values in pl, however, undergo rounding errors, therefore the above
-    # criteria fail (not met although pl represents cylinder or cone).  r2 for
-    # cone cannot be defined if t2 is close to 0, since it is in denominator,
-    # therefore the cone parameters can be defined only when t2 is above some
-    # positive threshold. Consistency checks for cylinder and cone are equal
-    # (conditin onto the sum A+B+C that is different for cone and cylinder, is
-    # used already above as t^2 = 0):
-    #
-    #   A <= 1
-    #   B <= 1
-    #   C <= 1
-    #   D^2(1 - C)  =  E^2(1 - A)  =  F^2(1 - B)
-    #
-    #
-    # If for some chosen e1, 0 <= t2 < e1, equations for cone are not applied.
-    # in this case, parameters for cylinder are calculated for adjusted A, B and
-    # C. Additional check is done for the cylinder's radius: if it is below some
-    # e2, a warning message is printed.
-    #
-    # If e1 <= t2, parameters for cone can be evaluated. If t2 is still small,
-    # i.e. t2 < e3 for some e3 (e1 < e3), parameters for both, cylinder and cone
-    # are computed. A, B and C are adjusted for cylinder and cone separately.
-    # The choise between cone and cylinder is done by comparing r2 for
-    # adjusted input parameters. If r2 for cylinder is below e4 (can be equal to
-    # e2 used for warning above), the cylinder must be cast away. If r2 for cone
-    # is above e5, the cone must be cast away. When only one choice remains, it
-    # is printed out. When no choices remains, GQ not converted. When both
-    # choices remain, cylinder is xhosen as a more simple one and a warning
-    # message is printed.
+    # Define normalization coeff gamma:
+    A, B, C, D, E, F, G, H, J, K = pl
+    ABC = sum((A, B, C))
+    cmnt.append(' A, B, C:' + ' '.join('{:15.8e}'.format(v) for v in (A, B, C)))
+    cmnt.append(' D, E, F:' + ' '.join('{:15.8e}'.format(v) for v in (D, E, F)))
+    cmnt.append(' G, H, J:' + ' '.join('{:15.8e}'.format(v) for v in (G, H, J)))
+    cmnt.append('       K:' + ' {:15.8e}'.format(K))
 
-    # If e3 < t2, only cone is considered. Parameters for cone are calculated
-    # for adjusted A, B and C.
-    #
-    # In all cases of t2 value considered above, consistency check for D, E and
-    # F is performed (consistency checks for A, B and C are useless, since they
-    # are adjusted to meet them). If consistency check fails, the cossespondent
-    # option (cone or cylinder) is cast away.
+    # List of normalization coefficients. 1 is always assumed
+    gammas = [1.0, -1.0]
+    tDEF = 5e-5
+    tABC = 1e-9
+    if areclose((0, E), atol=tDEF, rtol=None):
+        if areclose((1, B), atol=tABC, rtol=None):
+            g = 1.0/B
+            gammas.append(g)
+            cmnt.append('gamma_B = {:15.8e}'.format(g))
+        if areclose((1, C), atol=tABC, rtol=None):
+            g = 1.0/C
+            gammas.append(g)
+            cmnt.append('gamma_C = {:15.8e}'.format(g))
+    else:
+        g = 2*E/(2*E*A - D*F)
+        gammas.append(g)
+        cmnt.append('gamma_E = {:15.8e}'.format(g))
 
-    et1 = 1e-7  # for t2 below, only cylinder is considered
-    et2 = 1e-3  # for t2 above, only cone is considered
-    er1 = 1e-3  # for cylinder's r2 below, warning is printed
-    er2 = 1e-3  # Cylinder with r2 below is cast away
-    er3 = 1e-3  # Cone with r2 above is cast away
-    ecca, eccr = 1e-6, 1e-5  # abs. and rel. tolerances for consistency checks
+    if areclose((0, F), atol=tDEF, rtol=None):
+        if areclose((1, A), atol=tABC, rtol=None):
+            g = 1.0/A
+            gammas.append(g)
+            cmnt.append('gamma_A = {:15.8e}'.format(g))
+        if areclose((1, C), atol=tABC, rtol=None):
+            g = 1.0/C
+            gammas.append(g)
+            cmnt.append('gamma_C = {:15.8e}'.format(g))
+    else:
+        g = 2*F/(2*F*B - D*E)
+        gammas.append(g)
+        cmnt.append('gamma_F = {:15.8e}'.format(g))
 
-    A, B, C = pl[0:3]
+    if areclose((0, D), atol=tDEF, rtol=None):
+        if areclose((1, B), atol=tABC, rtol=None):
+            g = 1.0/B
+            gammas.append(g)
+            cmnt.append('gamma_B = {:15.8e}'.format(g))
+        if areclose((1, A), atol=tABC, rtol=None):
+            g = 1.0/A
+            gammas.append(g)
+            cmnt.append('gamma_A = {:15.8e}'.format(g))
+    else:
+        g = 2*D/(2*D*C - E*F)
+        gammas.append(g)
+        cmnt.append('gamma_d = {:15.8e}'.format(g))
+
+    # Ensure that gamma=1 is considered first
+    gammas = set(gammas)
+    gammas.remove(1)
+    gammas.remove(-1)
+    gammas = (1.0, -1.0) + tuple(gammas)
+    for gamma in gammas:
+        t2, n, R0c, r2c, R0k, r2k, c1, c2 = get_surface_parameters(gamma, pl)
+        n2 = scalar_product(n, n)
+        R0kn = scalar_product(n, R0k)
+        R0k2 = scalar_product(R0k, R0k)
+        R0cn = scalar_product(n, R0c)
+        R0c2 = scalar_product(R0c, R0c)
+        tt = t2**0.5 if t2 >= 0 else float('nan')
+        rc = r2c**0.5 if r2c >= 0 else float('nan')
+        rk = r2k**0.5 if r2k >= 0 else float('nan')
+        cmnt.append('gamma: 1 + {:15.8e}'.format(gamma - 1.0))
+        cmnt.append('     t^2: {:15.8e}'.format(t2))
+        cmnt.append('      t : {:15.8e}'.format(tt))
+        cmnt.append('      n : ' + ' '.join('{:15.8e}'.format(v) for v in n))
+        cmnt.append('   (n,n): {:15.8e}'.format(n2))
+        cmnt.append('     r^2: {:15.8e}  {:15.8e}'.format(r2c, r2k))
+        cmnt.append('       r: {:15.8e}  {:15.8e}'.format(rc, rk))
+        cmnt.append('     R0c: ' + ' '.join('{:15.8e}'.format(v) for v in R0c))
+        cmnt.append('     R0k: ' + ' '.join('{:15.8e}'.format(v) for v in R0k))
+        cmnt.append('  (n,R0): {:15.8e}  {:15.8e}'.format(R0cn, R0kn))
+        cmnt.append(' (R0,R0): {:15.8e}  {:15.8e}'.format(R0c2, R0k2))
+        cmnt.append('      c1: {:15.8e}'.format(c1))
+        cmnt.append('      c2: {:15.8e}'.format(c2))
+
+        # Evaluate GQ at some points
+        d0 = evaluate_gq(pl, R0k)  # at cone focus
+        d1 = evaluate_gq(pl, R0c)  # at "cylinder center"
+        ccc = 1.0 + rc / R0c2**0.5
+        p2 = (ccc*v for v in R0c)
+        d2 = evaluate_gq(pl, p2)  # At cylinder surface
+        ccc = 1.0 - rc / R0c2**0.5
+        p3 = (ccc*v for v in R0c)
+        d3 = evaluate_gq(pl, p3)  # At cylinder surface
+
+        cmnt.append('  equation residuals:')
+        cmnt.append('          R0k:     {:15.8e}'.format(d0))
+        cmnt.append('          R0c:     {:15.8e}'.format(d1))
+        cmnt.append('          R0c + r: {:15.8e}'.format(d2))
+        cmnt.append('          R0c - r: {:15.8e}'.format(d3))
+
+        # Criteria for cone
+        if r2k >= 0 and d0 is not float('nan') and abs(d0) < min(abs(d2), abs(d3)):
+            typ = 'k'
+            org = R0k
+            r2 = r2k
+        elif r2c >= 0:
+            typ = 'c'
+            org = R0c
+            r2 = r2c
+        else:
+            typ = 'o'
+
+        cmnt.append('    typ: ' + typ)
+        if typ in 'ck':
+            cmnt = ['c ' + c for c in cmnt]
+            return typ, n, org, t2, r2, cmnt
+
+
+def get_surface_parameters(gamma, pl):
+    """
+    pl -- list of original GQ parameters,
+    gamma -- normlaization coefficient
+    """
+    # normliaze GQ parameters
+    pl = (gamma*v for v in pl)
+    A, B, C, D, E, F, G, H, J, K = pl
+
+    # parameter t^2
     t2 = sum((2.0, -A, -B, -C))
 
-    cmnt = []
-    c = cmnt.append
-    c('c Cylinder/cone parameters from GQ: ')
-    c('c t^2:    {:15.8e}'.format(t2))
-
-    check_et1 = abs(t2) < et1
-    c('c    |t^2| ({:15.8e})  <  et1 ({:15.8e}): {}'.format(t2, et1, check_et1))
-    if check_et1:
-        tyc, axc, orc, t2c, r2c, cc = get_cylinder(pl, cmnt)
-        if r2c < er1:
-            c('c WARNING: r2c ({:15.8e}) is below {:15.8e}'.format(r2c, er1))
-        if cc:
-            return tyc, axc, orc, t2c, r2c, cmnt
-        else:
-            return 'o', axc, orc, t2c, r2c, cmnt
-    else:
-        tyk, axk, ork, t2k, r2k, ck = get_cone(pl, cmnt)
-        check_et2 = areclose((0, t2), atol=et2, rtol=None,
-                             cmnt=cmnt,
-                             name='is t^2 < et2?')
-        if check_et2:
-            tyc, axc, orc, t2c, r2c, cc = get_cylinder(pl, cmnt)
-            can_be_cyl = cc and er2 < r2c
-            c('c    er2  ({:15.8e})  <   '
-                   'r2c  ({:15.8e}): {}'.format(er2, r2c, can_be_cyl))
-            can_be_con = ck and abs(r2k) <= er3
-            c('c   |r2k| ({:15.8e})  <=  '
-                   'er3  ({:15.8e}): {}'.format(r2k, er3, can_be_con))
-
-            if can_be_cyl and not can_be_con:
-                return tyc, axc, orc, t2c, r2c, cmnt
-            if can_be_con and not can_be_cyl:
-                return tyk, axk, ork, t2k, r2k, cmnt
-            if not can_be_cyl and not can_be_con:
-                return 'o', axc, orc, t2c, r2c, cmnt
-            if can_be_cyl and can_be_con:
-                c('c WARNING: both cone and cylinder are possible.')
-                return tyc, axc, orc, t2c, r2c, cmnt
-        else:
-            return tyk, axk, ork, t2k, r2k, cmnt
-
-
-def adjustABC_cyl(pl, cmnt):
-    """
-    Adjust A, B or C only if outside the range for cylinder, [0, 1].
-    """
-    a, b, c = pl
-    nm = 'cyl: is {} close to {}'.format
-    at = 1e-7
-    rt = None
-    for v in (0, 1):
-        if areclose((v, a), atol=at, rtol=rt):
-            a = v
-        if areclose((v, b), atol=at, rtol=rt):
-            b = v
-        if areclose((v, c), atol=at, rtol=rt):
-            c = v
-    if a == 1:
-        ccc = 1.0 / sum((b, c))
-        b = b * ccc
-        c = c * ccc
-    elif b == 1:
-        ccc = 1.0 / sum((a, c))
-        a = a * ccc
-        c = c * ccc
-    elif c == 1:
-        ccc = 1.0 / sum((a, b))
-        a = a * ccc
-        b = b * ccc
-    else:
-        ccc = 2.0 / sum((a, b, c))
-        a = a * ccc
-        b = b * ccc
-        c = c * ccc
-    if pl[0] != a or pl[1] != b or pl[2] != c:
-        cmnt.append('c Values A, B and C, original | adjusted for cylinder:')
-    else:
-        cmnt.append('c Values A, B and C: no need to adjust')
-    cmnt.append('c A: {:15.8e} | {:15.8e}'.format(pl[0], a))
-    cmnt.append('c B: {:15.8e} | {:15.8e}'.format(pl[1], b))
-    cmnt.append('c C: {:15.8e} | {:15.8e}'.format(pl[2], c))
-    return a, b, c
-
-
-def get_cylinder(pl_orig, cmnt):
-    # Adjust A, B and C so that t21 == 1.0 exactly.
-    pl = pl_orig[:]
-    a, b, c = adjustABC_cyl(pl[0:3], cmnt)
-    pl[0] = a
-    pl[1] = b
-    pl[2] = c
-
-    t21, xn, yn, zn, cd = get_direction(pl[0:6], cmnt)
-
-    G, H, J, K = pl[6:]
-    # Components of Ro are defined from expressions for G, H and J, assuming
-    # that (Ro, n) is equal to 0.
-    x0 = -G*0.5
-    y0 = -H*0.5
-    z0 = -J*0.5
-    # The cylinder radius is defined from expression for K:
-    r2 = x0**2 + y0**2 + z0**2 - K
-    cmnt.append("c (0,0,0) projection onto cylinder's axis")
-    cmnt.append('c xo:  {:15.8e}'.format(x0))
-    cmnt.append('c yo:  {:15.8e}'.format(y0))
-    cmnt.append('c zo:  {:15.8e}'.format(z0))
-    cmnt.append("c Cylinder's square radius")
-    cmnt.append('c r^2: {:15.8e}'.format(r2))
-    consistent = r2 >= 0 and cd
-    return 'c', (xn, yn, zn), (x0, y0, z0), t21, r2, consistent
-
-
-def adjustABC_con(pl, cmnt):
-    a, b, c = pl
-    nm = 'cone: is {} close to {}'.format
-    at = 1e-5
-    rt = None
-    for v in (0, 1):
-        if areclose((v, a), atol=at, rtol=rt):
-            a = v
-        if areclose((v, b), atol=at, rtol=rt):
-            b = v
-        if areclose((v, c), atol=at, rtol=rt):
-            c = v
-    if [a, b, c] != pl:
-        cmnt.append('c Values A, B and C, original | adjusted for cone:')
-        cmnt.append('c A: {:16.9e} | {:16.9e}'.format(pl[0], a))
-        cmnt.append('c B: {:16.9e} | {:16.9e}'.format(pl[1], b))
-        cmnt.append('c C: {:16.9e} | {:16.9e}'.format(pl[2], c))
-    else:
-        cmnt.append('c No need to adjust A, B and C for cone')
-        cmnt.append('c A: {:16.9e} '.format(pl[0]))
-        cmnt.append('c B: {:16.9e} '.format(pl[1]))
-        cmnt.append('c C: {:16.9e} '.format(pl[2]))
-    return a, b, c
-
-
-def get_cone(pl_orig, cmnt):
-    # Adjust A, B and C so that A <= 1, B <= 1 and C <= 1
-    pl = pl_orig[:]
-    a, b, c = adjustABC_con(pl[0:3], cmnt)
-    pl[0] = a
-    pl[1] = b
-    pl[2] = c
-
-    t21, xn, yn, zn, cd = get_direction(pl[0:6], cmnt)
-    G, H, J, K = pl[6:]
-    # For a cone, (R0, n) depends on the position of the cone focus and thus
-    # cannot be set to 0. Its value is defined from expressions for G, H and J,
-    # and than used again to get x0, y0 and z0.
-    ccc = (G*xn + H*yn + J*zn)/(t21 - 1.0)*t21/2.0
-    x0 = xn*ccc - G*0.5
-    y0 = yn*ccc - H*0.5
-    z0 = zn*ccc - J*0.5
-    cmnt.append('c Coordinates of the cone focus')
-    cmnt.append('c xo:  {:15.8e}'.format(x0))
-    cmnt.append('c yo:  {:15.8e}'.format(y0))
-    cmnt.append('c zo:  {:15.8e}'.format(z0))
-    # r2, expressed from K and others, is used to check consistensy
-    r2 = -(G*x0 + H*y0 + J*z0)/2.0 - K
-    cmnt.append('c Cone consistensy check (cylinder radius r^2)')
-    cmnt.append('c r^2: {:15.8e}'.format(r2))
-    return 'k', (xn, yn, zn), (x0, y0, z0), t21, r2, cd
-
-
-def get_direction(pl, cmnts):
-    A, B, C, D, E, F = pl
-    t21 = -sum((A, B, C, -3.0))
-    # Squares of axis direciton are from A, B and C
-    xn2 = (1.0 - A)/t21
-    yn2 = (1.0 - B)/t21
-    zn2 = (1.0 - C)/t21
-
-    if xn2 < 0.0:
-        cmnts.append('c A > 1')
-        xn = float('NaN')
-    else:
+    # parameters xn, yn, zn
+    t21 = sum((3.0, -A, -B, -C))
+    xn2 = (1 - A)/t21
+    yn2 = (1 - B)/t21
+    zn2 = (1 - C)/t21
+    xn = float('nan')
+    yn = float('nan')
+    zn = float('nan')
+    if xn2 >= 0:
         xn = xn2 ** 0.5
-    if yn2 < 0.0:
-        cmnts.append('c B > 1')
-        yn = float('NaN')
-    else:
+    if yn2 >= 0:
         yn = yn2 ** 0.5
-    if zn2 < 0.0:
-        cmnts.append('c C > 1')
-        zn = float('NaN')
-    else:
+    if zn2 >= 0:
         zn = zn2 ** 0.5
-
-    # The choice of axis direction sign: The largest component is positive,
-    # the others -- from D, E and F.
     mn2 = max((xn2, yn2, zn2))
     if xn2 == mn2:
         yn = copysign(yn, -D)
@@ -327,29 +211,50 @@ def get_direction(pl, cmnts):
     else:
         xn = copysign(xn, -F)
         yn = copysign(yn, -E)
-    cmnts.append('c Components of the axis vector:')
-    cmnts.append('c xn: {:15.8e}'.format(xn))
-    cmnts.append('c yn: {:15.8e}'.format(yn))
-    cmnts.append('c zn: {:15.8e}'.format(zn))
 
-    # Perform consistency checks for cone and cylinder:
-    # D^2(C-1) = E^2(A-1) = F^2(B-1)
-    e1 = D**2 * (1.0 - C)
-    e2 = E**2 * (1.0 - A)
-    e3 = F**2 * (1.0 - B)
-    e4 = 4.0 * t21**3 * xn2 * yn2 * zn2
-    cmnts.append('c Consistensy check D^2(1-C) = E^2(1-A) = F^2(1-B) = '
-      '4 (1 + t^2)^3 xn^2 yn^2 zn^2')
-    cmnts.append('c D^2 (1 - C):      {:15.8e}'.format(e1))
-    cmnts.append('c E^2 (1 - A):      {:15.8e}'.format(e2))
-    cmnts.append('c F^2 (1 - B):      {:15.8e}'.format(e3))
-    cmnts.append('c 4 (t^2 + 1)^3 xn^2yn^2zn^2: {:15.8e}'.format(e4))
-    check = areclose((e1, e2, e3, e4), atol=1e-5, rtol=1e-4,
-                     cmnt=cmnts,
-                     name='D^2(1-C) = E^2(1-A) = '
-                          'F^2(1-B) = 4(1 + t^2)^3 xn^2 yn^2 zn^2')
-    consistent = check and float('NaN') not in (xn, yn, zn)
-    return t21, xn, yn, zn, consistent
+    # Parameters x0, y0, z0
+    # and r2 (cylinder radius, or error in cone focus position)
+
+    # Assuming that t2 is 0 (i.e. formulae for cylinder)
+    x0c = -G * 0.5
+    y0c = -H * 0.5
+    z0c = -J * 0.5
+    r2c = x0c**2 + y0c**2 + z0c**2 - K
+
+    # Formulae for cone
+    cR0n = (G*xn + H*yn + J*zn)*t21/2.0
+    if t2 > 0:
+        cR0n = cR0n / t2
+    else:
+        cR0n = copysign(float('inf'), cR0n*t2)
+    x0k = xn*cR0n - G*0.5
+    y0k = yn*cR0n - H*0.5
+    z0k = zn*cR0n - J*0.5
+    r2k = -(G*x0k + H*y0k + J*z0k)/2 - K
+
+    # Consistency checks
+    rgh1 = D*E*F
+    lft1 = -8*(1 - A)*(1 - B)*(1 - C)
+    rgh2 = (G*xn + H*yn + J*zn)**2 * t21
+    lft2 = G**2*(1 - A) + H**2*(1 - B) + J**2*(1 - C) - G*H*D - J*G*F - J*H*E
+    c1 = rgh1 - lft1
+    c2 = rgh2 - lft2
+    return (t2, (xn, yn, zn),
+            (x0c, y0c, z0c), r2c,    # cylinder formulae
+            (x0k, y0k, z0k), r2k,    # cone formulae
+            c1, c2)
+
+
+def evaluate_gq(pl, p):
+    """
+    Evaluate GQ equation at point p.
+    """
+    x, y, z = p
+    A, B, C, D, E, F, G, H, J, K = pl
+    d = (A*x**2 + B*y**2 + C*z**2 +
+         D*x*y  + E*y*z  + F*z*x  +
+         G*x    + H*y    + J*z    + K)
+    return d
 
 
 def basis_on_axis(axis):

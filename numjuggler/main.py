@@ -1386,7 +1386,9 @@ def main():
                     c.get_values()
                     if c.stype == 'gq':
                         tuf, pl = nogq2.get_params(' '.join(c.input))
-                        typ, a, o, t21, r2, cl = nogq2.get_cone_or_cylinder(pl)
+                        typ, a, o, t2, r2, cl = nogq2.get_cone_or_cyl(pl)
+                        for comment in cl:
+                            print(comment)
                         crd1 = crd.splitlines()
                         if typ in 'ck' and not tuf:
                             bbb, aaa = nogq2.basis_on_axis(a)
@@ -1424,7 +1426,7 @@ def main():
                                 p = r2**0.5  # cylinder radius
                             elif typ == 'k':
                                 aaa = 'k/' + aaa
-                                p = t21 - 1.0  # square tan of half-angle
+                                p = t2  # square tan of half-angle
                             crd += cfmt.format(c.name,
                                                trn + trn0, aaa, c1, c2, p)
                         elif tuf:
