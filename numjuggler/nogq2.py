@@ -1,4 +1,5 @@
 from math import copysign, isnan
+from pirs.core.trageom import vector
 
 
 def areclose(l, rtol=1e-4, atol=1e-7, cmnt=None, name='', detailed=True):
@@ -141,41 +142,87 @@ def get_cone_or_cyl(pl):
         cmnt.append('      c1: {:15.8e}'.format(c1))
         cmnt.append('      c2: {:15.8e}'.format(c2))
 
-        # Evaluate GQ at some points
-        d0 = evaluate_gq(pl, R0k)  # at cone focus
-        d1 = evaluate_gq(pl, R0c)  # at "cylinder center"
-        ccc = 1.0 + rc / R0c2**0.5
-        p2 = (ccc*v for v in R0c)
-        d2 = evaluate_gq(pl, p2)  # At cylinder surface
-        ccc = 1.0 - rc / R0c2**0.5
-        p3 = (ccc*v for v in R0c)
-        d3 = evaluate_gq(pl, p3)  # At cylinder surface
+        # Check parameters common for cone and cylinder
+        if isnan(n2) or areclose((0, n2), atol=1e-4, rtol=None):
+            cmnt.append('        gamma sorted out due to n')
+            continue
 
-        cmnt.append('  equation residuals:')
-        cmnt.append('          R0k:     {:15.8e}'.format(d0))
-        cmnt.append('          R0c:     {:15.8e}'.format(d1))
-        cmnt.append('          R0c + r: {:15.8e}'.format(d2))
-        cmnt.append('          R0c - r: {:15.8e}'.format(d3))
+        # Evaluate surface at some points
+        distances = (-100, -10, -1, 0, 1, 10, 100)
+        rsdc = {}  # residuals for cylinder
+        rsdk = {}  # residuals for cone
+        ni, nj, nk = vector.Vector3(car=n).basis()
+        if areclose((0, r2c), atol=1e-6, rtol=None) or isnan(rc) or isnan(R0c2):
+            can_be_cylinder = False
+            cmnt.append('        cannot be cylinder due to r2 or R0')
+        else:
+            can_be_cylinder = True
+            r0 = vector.Vector3(car=R0c)
+            nj.R = rc
+            nk.R = rc
+            for d in distances:
+                r00 = r0 + d*ni
+                d1 = evaluate_gq(pl, (r00 + nj).car)
+                d2 = evaluate_gq(pl, (r00 - nj).car)
+                d3 = evaluate_gq(pl, (r00 + nk).car)
+                d4 = evaluate_gq(pl, (r00 - nk).car)
+                rsdc[d] = (d1, d2, d3, d4)
+        if areclose((0, t2), atol=1e-6, rtol=None) or isnan(tt) or isnan(R0k2):
+            can_be_cone = False
+            cmnt.append('        cannot be cone due to t2 or R0')
+        else:
+            can_be_cone = True
+            r0 = vector.Vector3(car=R0k)
+            for d in distances:
+                rkd = tt * d
+                nj.R = rkd
+                nk.R = rkd
+                r00 = r0 + d*ni
+                d1 = evaluate_gq(pl, (r00 + nj).car)
+                d2 = evaluate_gq(pl, (r00 - nj).car)
+                d3 = evaluate_gq(pl, (r00 + nk).car)
+                d4 = evaluate_gq(pl, (r00 - nk).car)
+                rsdk[d] = (d1, d2, d3, d4)
 
-        if r2k >= 0 and d0 is not float('nan') and abs(d0) < min(abs(d2), abs(d3)):
-            # Criteria for cone
+        # Compare residuals for cone and cylinder and choose one
+        if can_be_cone and can_be_cylinder:
+            typ = 0
+            for d in distances:
+                dc = scalar_product(rsdc[d], rsdc[d])
+                dk = scalar_product(rsdk[d], rsdk[d])
+                if dc <= dk:
+                    typ += 1
+                else:
+                    typ -= 1
+            if typ > 0:
+                typ = 'c'
+            else:
+                typ = 'k'
+        elif can_be_cone:
             typ = 'k'
-            org = R0k
-            r2 = r2k
-        elif r2c >= 0:
+        elif can_be_cylinder:
             typ = 'c'
-            org = R0c
-            r2 = r2c
         else:
             typ = 'o'
+            continue
 
-        if isnan(sum(n + org + (r2, t2))):
-            typ = 'o'
+        # Prepare output
+        if typ == 'k':
+            org = R0k
+            r2 = r2k
+            rsd = rsdk
+        elif typ == 'c':
+            org = R0c
+            r2 = r2c
+            rsd = rsdc
 
-        cmnt.append('    typ: ' + typ)
-        if typ in 'ck':
-            cmnt = ['c ' + c for c in cmnt]
-            return typ, n, org, t2, r2, cmnt
+        rsdmax = max(map(abs, sum(rsd.values(), ())))
+        cmnt.append(' Residuals for {}, {:15.8e}'.format(typ, rsdmax))
+        for d in distances:
+            cmnt.append(' at d={:10.3e}:'.format(d) + ' '.join('{:15.8e}'.format(v) for v in rsd[d]))
+
+        cmnt = ['c ' + c for c in cmnt]
+        return typ, n, org, t2, r2, cmnt
 
 
 def get_surface_parameters(gamma, pl):
