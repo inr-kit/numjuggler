@@ -220,9 +220,17 @@ def get_cone_or_cyl(pl):
         cmnt.append(' Residuals for {}, {:15.8e}'.format(typ, rsdmax))
         for d in distances:
             cmnt.append(' at d={:10.3e}:'.format(d) + ' '.join('{:15.8e}'.format(v) for v in rsd[d]))
+        if rsdmax > 1e-1:
+            typ = 'o'
+            continue
+        else:
+            cmnt.append(' Final max. residual for {}, {:15.8e}'.format(typ, rsdmax))
 
         cmnt = ['c ' + c for c in cmnt]
         return typ, n, org, t2, r2, cmnt
+    typ = 'o'
+    cmnt = ['c ' + c for c in cmnt]
+    return typ, None, None, None, None, cmnt
 
 
 def get_surface_parameters(gamma, pl):

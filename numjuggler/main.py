@@ -14,6 +14,34 @@ def multiline(lines, prefix=''):
     return prefix + ('\n' + prefix).join(lines)
 
 
+def tr2str(pl, fmt1='{:12.9f}', fmte='{:16.8e}'):
+    """
+    Compact format for tr card.
+    """
+    r = ['tr{:<}']
+    for p in pl:
+        if p == 0:
+            ps = '0'
+        elif p == -1:
+            ps = '-1'
+        elif p == 1:
+            ps = '1'
+        elif -10 < p < 10:
+            ps = fmt1.format(p)
+        else:
+            ps = fmte.format(p)
+
+        # Remove unnecessary characters
+        ps = ps.replace('e-0', 'e-')
+        ps = ps.replace('e+0', 'e+')
+        ps = ps.replace(' ', '')
+
+        if len(r[-1]) + len(ps) > 80:
+            r.append('\n    ')
+        r[-1] += ' ' + ps
+    return ''.join(r)
+
+
 # help messages already wrapped:
 help_c = """
 Cell number increment. If an integer is given, it is added to all cell numbers
@@ -1377,9 +1405,10 @@ def main():
 
             vfmt = ' {:15.8e}'
             tfmt = 'tr{} 0 0 0  ' + ('\n     ' + 3*vfmt) * 3
-            cfmt = '{} {}  {}  ' + 3*vfmt + '\n'
-            kfmt = '{} {}  {}  ' + 4*vfmt + '\n'
+            cfmt = '{} {}  {} ' + 3*vfmt + '\n'
+            kfmt = '{} {}  {} ' + 3*vfmt + '\n      ' + vfmt + '\n'
             trd = {}
+            trn = 0
             # replace GQ cylinders with c/x + tr
             for c in cards:
                 crd = c.card()
@@ -1391,7 +1420,7 @@ def main():
                         for comment in cl:
                             print(comment)
                         crd1 = crd.splitlines()
-                        if typ in 'ck' and not tuf:
+                        if typ in 'ck' and not tuf and trn + trn0 < 999:
                             bbb, aaa = nogq2.basis_on_axis(a)
                             # bbb is the basis, where the cylinder/cone axis is
                             # parallel to axis aaa. In this basis, the origin o
@@ -1409,7 +1438,10 @@ def main():
                                 c1 = oprime[0]
                                 c2 = oprime[1]
                             for k, v in trd.items():
-                                if tr == v:
+                                for e1, e2 in zip(v, tr):
+                                    if not nogq2.areclose((e1, e2), atol=1e-7, rtol=None):
+                                        break
+                                else:
                                     trn = k
                                     break
                             else:
@@ -1449,8 +1481,10 @@ def main():
                 if trd and c.ctype == mp.CID.blankline:
                     # this is blankline after surfaces. Put tr cards here
                     for k, v in sorted(trd.items()):
-                        ijk = (k + trn0,) + v
-                        print(tfmt.format(*ijk))
+                        v = (0, 0, 0) + v
+                        print(tr2str(v).format(k + trn0))
+                        # ijk = (k + trn0,) + v
+                        # print(tfmt.format(*ijk))
                     trd = {}
 
         elif args.mode == 'count':
