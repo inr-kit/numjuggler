@@ -597,7 +597,8 @@ class Card(object):
                     il = []
                     tl = [t]
 
-                    while len(i.rstrip()) > 79:
+                    # while len(i.rstrip()) > 79:
+                    while len(i.rstrip()) > 80:
                         # first try to shift to left
                         if i[:5] == ' '*5:
                             i = ' '*5 + i.lstrip()
@@ -1138,6 +1139,44 @@ def is_blankline(l):
 
 def get_cards(inp, debug=None):
     """
+    Check first existence of a dump file
+
+    If dump exists and it is newwer than the input file, read the dump file
+    """
+    from os import stat
+    iname = inp
+    dname = '.{}.~'.format(inp)
+    try:
+        it = stat(iname).st_mtime
+    except OSError as e:
+        raise e
+
+    try:
+        dt = stat(dname).st_mtime
+    except OSError:
+        # print('No dump file exists')
+        dt = it - 1.0
+    if it < dt:
+        # print('Reading from dump')
+        # dump is youger
+        import cPickle
+        dfile = open(dname, 'r')
+        cl = cPickle.load(dfile)
+        for c in cl:
+            yield c
+    else:
+        # print('Reading from input')
+        cl = []
+        for c in get_cards_from_input(inp, debug=debug):
+            yield c
+            cl.append(c)
+        import cPickle
+        dfile = open(dname, 'w')
+        cPickle.dump(cl, dfile)
+
+
+def get_cards_from_input(inp, debug=None):
+    """
     Iterable, return instances of the Card() class representing
     cards in the input file.
 
@@ -1300,11 +1339,14 @@ def are_close_vals(x, y, re=1e-6, ra=0.):
 
 def are_close_lists(x, y, re=1e-6, pci=[]):
     """
-    Return True if x and y are close.
+    Return True if x and y are close but not equal.
     """
     if len(x) != len(y):
         res = False
         msg = 'Different lenght'
+
+    if x == y:
+        return False
 
     # pci -- list of indices that define elements of x and y to be checked for
     # proportionality only.
@@ -1363,13 +1405,6 @@ def are_close_lists(x, y, re=1e-6, pci=[]):
 
     else:
         result = True
-    # print 'are_equal', x, y, re, pci
-    # for xl, yl, r, m in zip([xe, xp], [ye, yp], res, msg):
-    #     print ' '*5, m, r, ':'
-    #     print ' '*15, xl
-    #     print ' '*15, yl
-    #     if r:
-    #         break
     return result
 
 

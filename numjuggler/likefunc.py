@@ -17,6 +17,7 @@ def trivial(x):
 # attribute must contain function expression, with argument denoted as `x`
 trivial._mydoc = "x"
 
+
 def const_func(c):
     """
     Return function f(x) = c.
@@ -26,11 +27,13 @@ def const_func(c):
     f._mydoc = '{}'.format(c)
     return f
 
+
 def add_func(c):
     def f(x):
         return x + c
     f._mydoc = 'x + {}'.format(c)
     return f
+
 
 class LikeFunctionBase(object):
     """
@@ -52,8 +55,11 @@ class LikeFunctionBase(object):
     """
 
     def __init__(self, log=False):
-        # Log. If None, mapping not logged, otherwise must be a dictionary
-        self.log = {} if log else None
+        # Dictionary to log calls
+        self.ld = {}
+
+        # Flag to store log
+        self.log = log
 
         # Default mapping, applied to elements not in ranges
         self.default = trivial
@@ -62,15 +68,29 @@ class LikeFunctionBase(object):
         self.doc = ""
         return
 
-    def __call__(self, x):
+    def __call1(self, x):
         res = self.get_value(x)
-        self._add_to_log(x, res)
         return res
 
-    def _add_to_log(self, x, y):
-        if self.log is not None:
-            self.log[x] = y
-        return
+    def __call2(self, x):
+        res = self.get_value(x)
+        self.ld[x] = res
+        return res
+
+    def __call__(self, x):
+        return self.__call1(x)
+
+    @property
+    def log(self, v):
+        return self.__lf
+
+    @log.setter
+    def log(self, v):
+        if v:
+            self.__call__ = self.__call2
+        else:
+            self.__call__ = self.__call1
+        self.__ld = v
 
     def __str__(self):
         res = []
@@ -98,8 +118,9 @@ class LikeFunctionBase(object):
 
     def write_log_as_map(self, t, fname=None):
         fout = self._get_log_file(fname)
-        for nold, nnew in self.log.items():
+        for nold, nnew in self.ld.items():
             print('{} {}: {}'.format(t, nnew, nold), file=fout)
+
 
 class LikeFunction(LikeFunctionBase):
     """
@@ -135,24 +156,55 @@ class LikeIndexFunction(LikeFunctionBase):
 
     List to be indexed is in self.vals.
     """
-    def __init__(self, log=False, i0=1, skip=[]):
+    def __init__(self, log=False, i0=1, skip=[], vals=[]):
         super(LikeIndexFunction, self).__init__(log)
 
         # List of values to index:
-        self.vals = []
+        self.vals = vals
 
         # First index
         self.i0 = i0
 
         # Values to skip from indexing and apply default map:
         self.skip = skip
+
+        self.get_value = self.get_valueI
         return
 
-    def get_value(self, x):
-        if x not in self.skip and x in self.vals:
+    def unique(self):
+        """
+        Return only unique entries from vals.
+        """
+        seen = set()
+        seen_add = seen.add
+        for x in self.vals:
+            if x not in seen:
+                seen_add(x)
+                yield x
+
+    def compile(self):
+        """
+        Generate a dictionary x-> vals.index(x), and use this dictionary
+        instead of calling index() each time.
+        """
+        d = {}
+        for i, x in enumerate(self.unique()):
+            if x in self.skip:
+                d[x] = self.default(x)
+            else:
+                d[x] = i + self.i0
+        self.d = d
+        self.get_value = self.get_valueD
+        return
+
+    def get_valueI(self, x):
+        if x not in self.skip:  # and x in self.vals:
             return self.vals.index(x) + self.i0
         else:
             return self.default(x)
+
+    def get_valueD(self, x):
+        return self.d[x]
 
     def _str(self):
         res = []
@@ -293,11 +345,13 @@ def get_indices(scards, log=False):
 
     res = {}
     for k, l in d.items():
-        m = LikeIndexFunction(log=False, i0=1)
-        m.vals = l
         # do not rename universe 0 and material 0
         if k in ('u', 'mat'):
-            m.skip = [0]
+            skip = [0]
+        else:
+            skip = []
+        m = LikeIndexFunction(log=log, i0=1, vals=l, skip=skip)
+        m.compile()
         res[k] = m
 
     return res

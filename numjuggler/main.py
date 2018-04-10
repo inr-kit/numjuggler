@@ -10,6 +10,38 @@ from numjuggler import parser as mp
 from numjuggler import ri_notation as rin
 
 
+def multiline(lines, prefix=''):
+    return prefix + ('\n' + prefix).join(lines)
+
+
+def tr2str(pl, fmt1='{:12.9f}', fmte='{:16.8e}'):
+    """
+    Compact format for tr card.
+    """
+    r = ['tr{:<}']
+    for p in pl:
+        if p == 0:
+            ps = '0'
+        elif p == -1:
+            ps = '-1'
+        elif p == 1:
+            ps = '1'
+        elif -10 < p < 10:
+            ps = fmt1.format(p)
+        else:
+            ps = fmte.format(p)
+
+        # Remove unnecessary characters
+        ps = ps.replace('e-0', 'e-')
+        ps = ps.replace('e+0', 'e+')
+        ps = ps.replace(' ', '')
+
+        if len(r[-1]) + len(ps) > 80:
+            r.append('\n    ')
+        r[-1] += ' ' + ps
+    return ''.join(r)
+
+
 # help messages already wrapped:
 help_c = """
 Cell number increment. If an integer is given, it is added to all cell numbers
@@ -25,430 +57,22 @@ File, containing descrption of mapping. When specified, options "-c", "-s", "-m"
 and "-u" are ignored.
 """[1:]
 
-dhelp = {}
-dhelp['mode'] = """
-EXECUTION MODES
----------------
-
-The "--mode" argument defines the execution mode of the script. It can have the
-following string values:
-
-
-renum:
-    The default mode. Cells, surfaces, materials and universes are renamed
-    according to the -c, -s, -m, -u or --map command line options. The original
-    MCNP input file is not modified, the input file with renamed elements in
-    written to std.out.
-
-
-info:
-    The input file is analysed and ranges of used numbers for cells, surfaces,
-    ets. is written to std.out. Note that output of this mode can be used
-    (after necessary modifications) as input to the --map option.
-
-    The first two columns specify type (cells, surfaces, etc.) and the range of
-    used numbers. The third column shows the amount of numbers in current range,
-    and the last column shows how many numbers left unused between the current
-    and previous ranges.
-
-
-wrap:
-    Wrap lines in the MCNP input file to fit the 80-chars limit. Wrapped only
-    meaningful parts of the lines: if a line exceed 80 characters due to
-    comments (i.e.  any entries after "$" or "&"), it is not wrapped.
-
-
-rems:
-    Replace multiple spaces with only one space. This operation is performed
-    only to the meaningful parts of the input file, i.e. comments are leaved
-    unchanged.
-
-
-remc:
-    remove all external comment lines (external means between cards).
-
-
-uexp:
-    Add explicit "u=0" to cells with no "u" parameter. This can be useful when
-    combining several input files into one model using universes. When cells
-    have explicit zero universes, they can be renumbered using the -u or --map
-    option in subsequent runs.
-
-    Another universe can be specified with the -u option. IN this case, the
-    whole option should be specified, i.e. -u ' u=1 '
-
-    The -c option can be used to specify cells to be handled. Examples:
-
-         -c "1 --150" -- add universe option only to these cells.
-         -c "!2" -- do not add universe to cell 2, even if it safisfies above
-         criteria
-
-split:
-    Split input into several files containing separate blocks. Output is written
-    to files
-
-        inp.1message
-        inp.2title
-        inp.3cells
-        inp.4surfaces
-        inp.5data
-
-    where inp is replaced by the name of the ofiginal input file. Note that
-    separate blocks do not contain blank lines. In order to concatenate block
-    files together into a single input, one needs to insert blank lines:
-
-    > numjuggler --mode split inp_
-    > cat inp_.[1-5]* > inp2_          # inp2_ lacks all blank lines
-    > echo '' > bl
-    > cat inp_.1* bl inp_.2* inp_.3* bl inp_.4* bl inp_.5* bl > inp3_
-
-    After these commands, file `inp3_` is equivalent to `inp_`.
-
-
-mdupl:
-    remove duplicate material cards. If an input file contains several mateiral
-    cards with the same name (number), only the first one is kept, the other
-    are skipped.
-
-
-matan:
-    Compare all meterials and list possible duplicates.
-
-sdupl:
-    Report duplicate (close) surfaces.
-
-
-msimp:
-    Simplify material cards.
-
-
-extr:
-    Extract the cell specified in the -c keyword together with materials,
-    surfaces and transformations.
-
-    If the first entry of the -c keyword is `!`, extract all but the cells
-    specified after.
-
-
-
-nogq:
-    Replaces GQ cards representing a cylinder with c/x plus tr card. In some
-    cases this improves precision of cylinder's representations and helps to
-    fix lost particle errors.
-
-    Transformation card numbering starts from the number specified in -t
-    argument.
-
-    If -c is given and differs from "0", the original GQ cards remain in the
-    input, but commented out.  Otherwise (i.e. by default), they disappear from
-    the input.
-
-
-count:
-    Returns a list of cells with the number of surfaces used to define cell's
-    geometry.  Two values returned for each cell: total amount of surfaces
-    mentioned in the cell geometry, and the number of unique surfaces (that is
-    equal or less than the former).
-
-    Cells with total number of surfaces exceeding 100 (or the value given as
-    `-s` command line parameter) are denoted in the output with `*`
-
-
-nofill:
-    Under counstruction: Removes all 'fill=' keywords from cell cards.
-
-fillempty:
-    Add to all void non-filled cells with importance > 0 ``FILL = N``, where N
-    is specified in the ``-u`` argument. When a material name is given with the
-    -m argument, cells filled with this material are filled with N, instead of
-    void cells.
-
-    When a file is given with the --map option, a list of cells is read from
-    this file, and the "fill=" is added to these cells only, independent on
-    cell's importance or material.
-
-    UPD: the content of -u option is copied into the input file as is. For
-    example, to specify transformation in-place: -u '*fill=1 (0 0 5)'.
-
-
-matinfo:
-    Output information about how materials are used: for each material list of
-    cells with density and universe.
-
-    When -m option is given, it must be the mctal file with calculation of
-    cell volumes (for a tally prepared with the --mode tallies). In this case,
-    additionaly a summary of material weights is printed out.
-
-
-uinfo:
-    For each universe defined in the input file, return a list of cells in this
-    universe.
-
-
-impinfo:
-    List all cells with zero importances.
-
-
-sinfo:
-    For each surface defined in the input file, return the list of cells where
-    it is used.
-
-    At the end list all used types of surfaces.
-
-vsource:
-    Output data cards describing source for computation of volumes. Model
-    dimensions must be specified in the -c option as a rcc that circumscribes
-    the model. For example,
-
-    --mode vsource -c "10 20 -10 10 -20 20"
-
-    will generate planar sources for the box 10 < x < 20, -10 < y < 10 and
-    -20 < z < 20.
-
-    --mode vsource -s 100
-
-    will generate spherical source for the sphere 100.
-
-    --mode vsource -s "10 11 12 13 14 15"
-
-    will generate planar source based on parameters of planes 10 -- 15 (these
-    surfaces must be px, py and pz planes).
-
-
-tallies:
-    Output tally cards for calculation of volumes in all cells. Tally number
-    can be given with the -s option, and with non-zero -u one can specify cells
-    of particular universe.
-
-
-addgeom:
-    appends strings, specified in --map file  to geometry definition of cells.
-    Example of the map file:
-
-    10  -1 , #12 #35
-    11   1 , #12 #35
-    135
-
-    First entry -- cell, which geometry should be modified. Second entry till
-    comma ('-1' and '1' in the above example) will be prepended to the cell's
-    existing geometry definition, the rest after the comma will be appended
-    after the existing geometry definition.
-
-    If the cell number is not followed by any entry (including the comma), this
-    cell will be removed from the resulting input file. In the above example,
-    cell 135 will be removed.
-
-
-merge:
-    put two input files into a single file. Second input file is given in the -m
-    option.
-
-
-remu:
-    Remove all cells that belong to the universe specified in the -u option, or
-    cells specified in the -c option. Surfaces that are used only for the
-    removed cells are removed as well.
-
-    One can use the "I" MCNP short-hand notation in the -u and -c options to
-    specify a range of universe or cell numbers.
-
-    If the -u keyword string starts with "!", than all except the specified
-    universes are removed.
-
-    When universes to remove are given with the -u option, the FILL options are
-    changed by replacing the removed universe numbers with the smallest universe
-    number to be removed.
-
-    One can specify additional cell cards and surface cards using the -m and -s
-    options. The content of -m is appended to the card's block; the content of
-    -s is prepended to the surface block.
-
-    Examples:
-
-        # Remove cells of universe 4
-
-        > numjuggler --mode remu -u "4" inp.1 > inp.2
-
-
-        # Remove cells of universes 4 and 5. In this case, FILL=5, if any, will
-        # be replaced with FILL=4
-
-        > numjuggler --mode remu -u "4 5" inp.1 > inp.2
-
-
-        # Remove cells 1, 2 and 3:
-
-        > numjuggler --mode remu -c "1 2 3" inp.1 > inp.2
-
-
-        # Remove all universes except 4 and add description of cell 100 and
-        # surface 100. All cells filled with deleted universes will be filled in
-        # the new input file with cell 100:
-
-        > numjuggler --mode remu -u "!4" \
-                       -m "100 0 -100 imp:n=1 imp:p=1 u=4"\
-                       -s "100 so 1e5"
-                       inp.1 > inp.2
-
-
-zrotate:
-    rotate gometry around z-axis to the angle specified in -c parameter.
-    Rotation is applied by defining the transformation card and applying it to
-    surfaces without transformations. And all existing pure rotational
-    transformations are changed.
-
-annotate:
-    Adds text from map file as multiline comment right after the title.
-
-
-getc:
-    Extract comments taking more than 10 (or given by -c option) lines.
-
-
-"""
-
-
-dhelp['map'] = """
-MAP FILE GENERAL INFO
----------------------
-
-Mapping rules can be specified in a separate file that is read when --map
-option is given.
-
-Different from the -c, -s, -m and -u options, in the map file one can specify
-mapping rules for separate ranges. Ultimately, all new cell, surface, material
-or universe names can be given explicitly.
-
-
-MAP FILE FORMAT
----------------
-
-The map file consists of lines of the following form:
-
-    t [range]: [+-]D
-
-The first entry, t, is a one character type specification: "c" for cells, "s"
-for surfaces, "m" for materials and "u" for universes.
-
-It is optionally followed by the range specifier that can be one number, for
-example "10", or two numbers delimited by two dashes, for example "10 -- 25". If
-the range is omitted, the line defines the default mapping, i.e. it is applied
-to elements not entering to all other ranges.
-
-The semicolon, ":", delimits the range specification from the specification of
-the mapping rule.  It is followed by an integer, optionally signed. This
-integer defines an increment to which numbers in the current range are
-increased. The mapping is than N -> N+D, where N is the original number from the
-range [N1, N2].
-
-When unsigned integer "D" is given on the line with range specification, i.e.
-with "N1" or "N1 -- N2", it is considered as the first element of the mapped
-range. Mapping in this case is N -> N+D-N1, where N in [N1, N2].
-
-
-MAP FILE EXAMPLES
------------------
-
-In the example below, cells from 1 to 10 inclusive are renamed to the range from
-11 to 20, cell 200 is renamed to 250 and to all other cells numbers are
-incremented by 1000:
-
-    c 1 -- 10: +10    # explicit sign means increment
-    c 200:     250    # no sign means new number
-    c:        1000    # all other cell numbers increment by 1000
-
-Another example specifies that only universe number 0 should be modified:
-
-    u 0: 10          # universe 0 will become number 10
-    u: 0             # not necessary, while the trivial mapping is by default.
-
-
-Provide all cell numbers explicitly (assume that input file has cells from 1 to
-5):
-
-    c 1: 12
-    c 2: 14
-    c 3: 16
-    c 4: 18
-    c 5: 20
-
-Note that the --mode info option gives a list of all used ranges and can be used
-as a basis for the mapping file.
-
-Only lines beginning with "c", "s", "u" or "m" and having the semicolon ":" are
-taken into account; all other lines are ignored. After the semicolon, only one
-entry is taken into account.
-
-"""
-
-dhelp['examples'] = """
-INVOCATION EXAMPLES
--------------------
-
-Get extended help:
-
-  > numjuggler -h mode
-  > numjuggler -h map
-
-
-Prepare model for insertion into another as universe 10:
-
-  > numjuggler --mode uexp inp > inp1     # add u=0 to real-world cells
-  > echo "u0: 10 " > map.txt                # generate mapping file
-  > numjuggler --map map.txt inp1 > inp2  # replace u=0 with u=10
-  > numjuggler --mode wrap inp2 > inp3    # ensure all lines shorter 80 chars.
-
-
-Rename all cells and surfaces by adding 1000:
-
-  > numjuggler -s 1000 -c 1000 inp > inp1
-  > numjuggler --mode wrap inp1 > inp2    # ensure all lines shorter 80 chars.
-
-
-Rename all cells and surfaces by incrementing numbers as they appear in the
-input file. To check renumbering, store log and use it on the next step as the
-map file to perform the reverse renumbering.  Finally, remove extra spaces from
-the resulting file and original one, in order to simplify visual comparison:
-
-  > numjuggler -c i -s i --log i1.log i1 > i2
-  > numjuggler --map i1.log i2 > i3  # apply log as map for reverse renubmering
-  > numjuggler --mode rems i1 > c1   # remove extra spaces from original input
-  > numjuggler --mode rems i3 > c3   # and from result of reverse renumbering
-  > vimdiff c1 c3                      # compare files visually
-
-
-"""
-
-dhelp['limitations'] = """
-LIMITATIONS
------------
-
-Cell parameters can be read only from the cell cards block. Cell parameters
-specified in the data cards block are ignored.
-
-Only subset of data cards is parsed to find cell, surface, etc. numbers. For
-example, cell and surface numbers will be recognized in a tally card, but
-material numbers will not be found in tally multiplier card. Also, cell and
-surface numbers in the source-related cards are nor recognized.
-
-Only a subset of execution modes were tested on the C-lite model. Current
-implementation is rather ineffective: complete renumbering of cells and
-surfaces in C-lite takes 5 -- 10 min.
-
-
-"""
-
 descr = """
 Renumber cells, surfaces, materials and universes in MCNP input file. The
 original MCNP input file name must be given as command line option, the modified
 MCNP input file is written to std.out." """[1:]
 
-# dhelp keys as a string, with the last ',' replaced with 'or' for more humanity
-dhelp_keys = str(sorted(dhelp.keys()))[1:-1][::-1].replace(',', ' ro ', 1)[::-1]
-
 epilog = """
-Specify {} after -h for additional help.
-"""[1:].format(dhelp_keys)
+Specify 'mode', 'map', 'limitations', or the mode name after -h for additional
+help.
+"""
+
+modes = ('renum', 'info', 'wrap', 'uexp', 'rems', 'remc',
+         'split', 'mdupl', 'matan', 'sdupl', 'msimp', 'extr',
+         'nogq', 'nogq2', 'count', 'nofill', 'matinfo', 'uinfo',
+         'impinfo', 'fillempty', 'sinfo', 'vsource',
+         'tallies', 'addgeom', 'merge', 'remu', 'zrotate',
+         'annotate', 'getc', 'mnew', 'combinec', 'cdens')
 
 
 def main():
@@ -474,12 +98,7 @@ def main():
                    default='')
     p.add_argument('--mode', help='Execution mode, "renum" by default',
                    type=str,
-                   choices=['renum', 'info', 'wrap', 'uexp', 'rems', 'remc',
-                            'split', 'mdupl', 'matan', 'sdupl', 'msimp', 'extr',
-                            'nogq', 'count', 'nofill', 'matinfo', 'uinfo',
-                            'impinfo', 'fillempty', 'sinfo', 'vsource',
-                            'tallies', 'addgeom', 'merge', 'remu', 'zrotate',
-                            'annotate', 'getc', 'mnew', 'combinec', 'cdens'],
+                   choices=modes,
                    default='renum')
     p.add_argument('--debug', help='Additional output for debugging',
                    action='store_true')
@@ -497,11 +116,26 @@ def main():
     if harg.h:
         if harg.h == 'gen':
             p.print_help()
-        elif harg.h in dhelp:
-            print(dhelp[harg.h])
         else:
-            print('No help for ', harg.h)
-            print('Available help options: ', dhelp_keys)
+            # try to read correspondent file from help folder
+            try:
+                import numjuggler as nj
+                dir1 = os.path.split(nj.__file__)[0]  # remove filename
+                dir1 = os.path.split(dir1)[0]         # remove the most deep dir
+                hlp = os.path.join(dir1, 'help/{}.rst'.format(harg.h))
+                print('Reading help from {}'.format(hlp))
+                print(open(hlp).read())
+            except Exception as e:
+                print('Cannot read help file for "{}"'.format(harg.h))
+
+        # elif harg.h in dhelp:
+        #     print(dhelp[harg.h])
+        # else:
+        #     import numjuggler as nj
+        #     # TODO use nj.__file__ to read from help folder.
+
+        #     print('No help for ', harg.h)
+        #     print('Available help options: ', dhelp_keys)
     else:
         args = p.parse_args(clo)
         if args.debug:
@@ -578,7 +212,8 @@ def main():
             # New version: tally number and universes should be specified in the
             # format string passed via -m argument.  -m must be present and have
             # form: 'f4:n (u4 < u5)', where uN -- placeholders for lists of
-            # cells that belong to universe N.
+            # cells that belong to universe N. Usual cell numbers can be used
+            # as well.
 
             import re
             r = re.compile('(u)(\d+)')
@@ -888,26 +523,25 @@ def main():
                 if c.ctype == mp.CID.surface:
                     # compare this surface with all previous and if unique, add
                     # to dict
-                    ust = us.get(c.stype, {})
-                    if ust == {}:
-                        us[c.stype] = ust
+                    if c.stype not in us.keys():
+                        us[c.stype] = {}
+                    ust = us[c.stype]
                     for sn, s in list(ust.items()):
-                        if s.stype == c.stype:
-                            # current surface card and s have the same type.
-                            # Compare coefficients:
-                            if mp.are_close_lists(s.scoefs,
-                                                  c.scoefs,
-                                                  pci=pcl.get(c.stype, [])):
-                                print(c.card(comment=False))
-                                print(s.card(comment=False))
-                                print()
-                                # print 'is close to {}'.format(sn)
-                                break
+                        if mp.are_close_lists(s.scoefs, c.scoefs,
+                                              pci=pcl.get(c.stype, [])):
+                            # If c is close to s, print s instead
+                            s.values[0] = (c.values[0][0], s.values[0][1])
+                            print(s.card(), end='')
+                            s.values[0] = (sn, s.values[0][1])
+                            break
                     else:
                         # add c to us:
                         cn = c.values[0][0]  # surface name
                         ust[cn] = c
+                        print(c.card(), end='')
                         # print 'is unique'
+                else:
+                    print(c.card(), end='')
 
         elif args.mode == 'msimp':
             # simplify material cards
@@ -1200,11 +834,20 @@ def main():
                 if c.ctype == mp.CID.cell:
                     aset.add(c.name)
 
+            extract_parents_flag = True
             if args.u != '0':
+                if '_' in args.u:
+                    extract_parents_flag = False
+                    args.u = args.u.replace('_', ' ')
+                else:
+                    extract_parents_flag = True
                 uref = int(args.u)
                 for c in cards:
-                    if c.ctype == mp.CID.cell and c.get_u() == uref:
-                        cset.add(c.name)
+                    if c.ctype == mp.CID.cell:
+                        u = c.get_u()
+                        u = 0 if u is None else u
+                        if u == uref:
+                            cset.add(c.name)
 
             # '!' means that the specified cells should NOT be extracted, but
             # all other.
@@ -1227,9 +870,9 @@ def main():
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     if c.name in cset:
-                        if c.get_f() is not None:
+                        if extract_parents_flag and c.get_f() is not None:
                             uset.add(c.get_f())
-                        if c.get_u() is not None:
+                        if extract_parents_flag and c.get_u() is not None:
                             fset.add(c.get_u())
 
             # next runs: find all other cells:
@@ -1343,13 +986,102 @@ def main():
                                 crd = ''
                             crd += '{} {} c/z {:15.8e} 0 {:15.8e}\n'.format(
                                 c.name, trn + trn0, x0, R)
-                            crd += 'c a^2={:12.6e} g={:12.6e} k={}\n'.format(a2, g, kk)
+                            # crd += 'c a^2={:12.6e} g={:12.6e} k={}\n'.format(a2, g, kk)
                 print(crd, end='')
                 if trd and c.ctype == mp.CID.blankline:
                     # this is blankline after surfaces. Put tr cards here
                     for k, v in sorted(trd.items()):
                         ijk = (k + trn0,) + v
                         print(tfmt.format(*ijk))
+                    trd = {}
+
+        elif args.mode == 'nogq2':
+            from numjuggler import nogq2
+            trn0 = int(args.t)
+            cflag = False if args.c == "0" else True
+
+            vfmt = ' {:15.8e}'
+            tfmt = 'tr{} 0 0 0  ' + ('\n     ' + 3*vfmt) * 3
+            cfmt = '{} {}  {} ' + 3*vfmt + '\n'
+            kfmt = '{} {}  {} ' + 3*vfmt + '\n      ' + vfmt + '\n'
+            trd = {}
+            trn = 0
+            # replace GQ cylinders with c/x + tr
+            for c in cards:
+                crd = c.card()
+                if c.ctype == mp.CID.surface:
+                    c.get_values()
+                    if c.stype == 'gq':
+                        tuf, pl = nogq2.get_params(' '.join(c.input))
+                        typ, a, o, t2, r2, cl = nogq2.get_cone_or_cyl(pl)
+                        for comment in cl:
+                            print(comment)
+                        crd1 = crd.splitlines()
+                        if typ in 'ck' and not tuf and trn + trn0 < 999:
+                            bbb, aaa = nogq2.basis_on_axis(a)
+                            # bbb is the basis, where the cylinder/cone axis is
+                            # parallel to axis aaa. In this basis, the origin o
+                            # of the cylinder/cone is:
+                            oprime = nogq2.transform(o, bbb, (0, 0, 0))
+                            # add transformation set
+                            tr = sum(bbb, ())  # sum of 3 3-tuples is a 9-tuple
+                            if aaa == 'x':
+                                c1 = oprime[1]
+                                c2 = oprime[2]
+                            elif aaa == 'y':
+                                c1 = oprime[0]
+                                c2 = oprime[2]
+                            else:
+                                c1 = oprime[0]
+                                c2 = oprime[1]
+                            for k, v in trd.items():
+                                for e1, e2 in zip(v, tr):
+                                    if not nogq2.areclose((e1, e2), atol=1e-7, rtol=None):
+                                        break
+                                else:
+                                    trn = k
+                                    break
+                            else:
+                                trn = len(trd) + 1
+                                trd[trn] = tr
+                            # Comment the original surface card and add
+                            # information about type, axis, origin and params
+                            if cflag:
+                                crd = multiline(crd1 + cl, 'c ') + '\n'
+                            else:
+                                crd = ''
+
+                            if typ == 'c':
+                                aaa = 'c/' + aaa
+                                p = r2**0.5  # cylinder radius
+                                crd += cfmt.format(c.name,
+                                                   trn + trn0,
+                                                   aaa,
+                                                   c1, c2, p)
+                            elif typ == 'k':
+                                aaa = 'k/' + aaa
+                                p = t2  # square tan of half-angle
+                                c0, c1, c2 = oprime
+                                crd += kfmt.format(c.name,
+                                                   trn + trn0,
+                                                   aaa,
+                                                   c0, c1, c2, p)
+                        elif tuf:
+                            # GQ with transform, do not modify
+                            crd = multiline(crd1) + '\n'
+                        else:
+                            # failed to convert GQ card. Use the original one
+                            # and print additional information
+                            crd = multiline(crd1 + cl) + '\n'
+
+                print(crd, end='')
+                if trd and c.ctype == mp.CID.blankline:
+                    # this is blankline after surfaces. Put tr cards here
+                    for k, v in sorted(trd.items()):
+                        v = (0, 0, 0) + v
+                        print(tr2str(v).format(k + trn0))
+                        # ijk = (k + trn0,) + v
+                        # print(tfmt.format(*ijk))
                     trd = {}
 
         elif args.mode == 'count':
@@ -1454,11 +1186,15 @@ def main():
                     print(fmt.format(c, d, u))
 
             # If -m option is given, try to get cell volumes from there
+            # -m argument is the mctal name followed by tally number of the
+            # tally containing cell volumes.
             if args.m != '0':
                 from pirs.mcnp.mctal import Mctal
                 mctal = Mctal()
-                mctal.read_complete(args.m)
-                tn, tv = mctal.mctaltallies.items()[0]
+                fname, tn = args.m.split()
+                tn = int(tn)
+                mctal.read_complete(fname)
+                tv = mctal.mctaltallies[tn]
                 cn = tv.fnl_numpy    # cell numbers
                 cv = tv.vals_numpy   # cell volumes
 
@@ -1493,6 +1229,7 @@ def main():
         elif args.mode == 'uinfo':
             # for each universe return list of its cells.
             res = {}
+            fd = {}  # dictionary of cells, filled with another universe
 
             # flag to sort cells in the output list:
             sflag = False if args.s == "0" else True
@@ -1500,6 +1237,7 @@ def main():
                 if c.ctype == mp.CID.cell:
                     c.get_values()
                     u = c.get_u()
+                    f = c.get_f()
                     u = 0 if u is None else u
                     l = res.get(u, [])
                     if not l:
@@ -1524,6 +1262,13 @@ def main():
                     l = sorted(l)
                 for e in rin.shorten(l):
                     print(e, end='')
+            # print tabulated "tree", see E-mail of Marco Fabri, 8.11.2017
+            for u, cl in sorted(res.items()):
+                print('Cells in universe ', u)
+                for c in cl:
+                    print(c, fd.get(c, ''))
+
+
 
         elif args.mode == 'impinfo':
 
@@ -1624,6 +1369,11 @@ def main():
                 """
                 print('sdef sur {} nrm -1 wgt {:12.7e}'.format(s, Pi * r**2))
 
+            # Set of surface names to be checked for surface source candidates
+            sset = set()
+            if args.s != '0':
+                sset = set(rin.expand(args.s.split()))
+
 
             # Try to find proper surfaces:
             surfaces = dict(zip('xyzs', (None,)*4))
@@ -1632,28 +1382,29 @@ def main():
                     c.get_values()
                 if c.ctype == mp.CID.surface:
                     c.get_values()
-                    if c.stype in ('px', 'py', 'pz', 'so', 's'):
-                        # this is surface-candidate. Check its parameters:
-                        k = c.stype.replace('p', '').replace('o', '')
-                        if k == 'p':
-                            v = c.scoefs[0]  # plane position
-                        else:
-                            v = c.scoefs[-1] # sphere radius
-                        if surfaces[k] is None:
-                            surfaces[k] = (c.name, v, c.name, v)
-                        else:
-                            n1, v1, n2, v2 = surfaces[k]
-                            if v1 > v:
-                                surfaces[k] = (c.name, v, n2, v2)
-                            if v2 < v:
-                                surfaces[k] = (n1, v1, c.name, v)
-
+                    if not sset or c.name in sset:
+                        if c.stype in ('px', 'py', 'pz', 'so', 's'):
+                            # this is surface-candidate. Check its parameters:
+                            k = c.stype.replace('p', '').replace('o', '')
+                            if k == 'p':
+                                v = c.scoefs[0]  # plane position
+                            else:
+                                v = c.scoefs[-1] # sphere radius
+                            if surfaces[k] is None:
+                                surfaces[k] = (c.name, v, c.name, v)
+                            else:
+                                n1, v1, n2, v2 = surfaces[k]
+                                if v1 > v:
+                                    surfaces[k] = (c.name, v, n2, v2)
+                                if v2 < v:
+                                    surfaces[k] = (n1, v1, c.name, v)
+            print_sdef = True
             for k, v in surfaces.items():
                 if v is not None:
                     n1, v1, n2, v2 = v
                     print('c ', k, n1, v1)
                     print('c ', k, n2, v2)
-                elif k == 's':
+                elif k == 's' and args.u in 'sS':
                     # propose parameters of the circumscribing sphere
                     x = surfaces['x']
                     y = surfaces['y']
@@ -1676,6 +1427,7 @@ def main():
                     print('c Circumscribing sphere: ')
                     print(ns, k, cx, cy, cz, r)
                     surfaces[k] = (ns, r, ns, r)
+                    print_sdef = False
 
             # Process -u key
             if args.u[-1] in 'xXyYzZ':
@@ -1694,7 +1446,8 @@ def main():
                     raise ValueError('Spheres not found for spherical source')
                 else:
                     n1, v1, n2, v2 = surfaces['s']
-                print_spherical(n2, v2)
+                if print_sdef:
+                    print_spherical(n2, v2)
 
             if args.c != '0':
                 print('c source from -c parameters')
