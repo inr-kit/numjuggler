@@ -4,3 +4,12 @@
 # Editor
 .ropeproject/
 
+# Environments
+.cache/
+.idea/
+
+# Dev.scripts results
+numjuggler.dot
+numjuggler.pdf
+numjuggler.sfood1
+numjuggler.sfood2
