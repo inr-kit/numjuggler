@@ -39,6 +39,16 @@ remc:
     remove all external comment lines (external means between cards).
 
 
+minfo:
+    Count the number of words, complementary operators and estimate the size of 
+    MCNP lja vector
+
+
+remh:
+    Remove all (when possible) complementary operators. Complementary operators
+    referring to transformed cell cannot be removed.
+
+
 uexp:
     Add explicit "u=0" to cells with no "u" parameter. This can be useful when
     combining several input files into one model using universes. When cells
