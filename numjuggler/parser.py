@@ -90,6 +90,10 @@ class Card(object):
         # card type by its position in the input. See CID class.
         self.ctype = ctype
 
+        # True if self.lines has changed after initialization
+        # used in remove_hash function
+        self.cstrg = False
+
         # data card type. Defined from the get_values() method.
         # Has sense only to data cards (see ctype). For other card types
         # is None.
@@ -826,7 +830,8 @@ def _split_cell(input_, self):
         vals.append(('', '#gsu'))
         fmts.append('{}')
         # insert placeholder for geometry suffix
-        inpt = inpt.replace(parm[0], '_' + parm[0], 1)
+        if parm:
+          inpt = inpt.replace(parm[0], '_' + parm[0], 1)
 
         # At this point all geom entries are replaced in inpt. The rest should
         # work only with the parm part of inpt. To ensure this, inpt is splitted
