@@ -1348,10 +1348,10 @@ def are_close_lists(x, y, re=1e-6, pci=[]):
     """
     if len(x) != len(y):
         res = False
-        msg = 'Different lenght'
+        msg = 'Different length'
 
     if x == y:
-        return False
+        return True
 
     # pci -- list of indices that define elements of x and y to be checked for
     # proportionality only.

@@ -1055,6 +1055,7 @@ def main():
                     if c.stype == 'gq':
                         tuf, pl = nogq2.get_params(' '.join(c.input))
                         typ, a, o, t2, r2, cl = nogq2.get_cone_or_cyl(pl)
+                        print('c Log for GQ card {}'.format(c.name))
                         for comment in cl:
                             print(comment)
                         crd1 = crd.splitlines()
