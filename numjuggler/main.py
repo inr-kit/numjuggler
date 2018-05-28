@@ -68,7 +68,7 @@ Specify 'mode', 'map', 'limitations', or the mode name after -h for additional
 help.
 """
 
-modes = ('renum', 'info', 'wrap', 'uexp', 'rems', 'remc', 'remh', 'minfo',
+modes = ('renum', 'info', 'wrap', 'uexp', 'rems', 'remc', 'remh', 'remrp', 'minfo',
          'split', 'mdupl', 'matan', 'sdupl', 'msimp', 'extr',
          'nogq', 'nogq2', 'count', 'nofill', 'matinfo', 'uinfo',
          'impinfo', 'fillempty', 'sinfo', 'vsource',
