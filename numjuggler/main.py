@@ -9,6 +9,7 @@ from numjuggler import numbering as mn
 from numjuggler import parser as mp
 from numjuggler import ri_notation as rin
 from numjuggler import string_cells as stc
+from numjuggler import version
 
 
 def multiline(lines, prefix=''):
@@ -61,7 +62,7 @@ and "-u" are ignored.
 descr = """
 Renumber cells, surfaces, materials and universes in MCNP input file. The
 original MCNP input file name must be given as command line option, the modified
-MCNP input file is written to std.out." """[1:]
+MCNP input file is written to std.out."""[1:]
 
 epilog = """
 Specify 'mode', 'map', 'limitations', or the mode name after -h for additional
@@ -78,6 +79,8 @@ modes = ('renum', 'info', 'wrap', 'uexp', 'rems', 'remc', 'remh', 'remrp', 'minf
 
 def main():
     p = ap.ArgumentParser(prog='numjuggler', description=descr, epilog=epilog)
+    p.add_argument('--version', action='version',
+                   version='%(prog)s {}'.format(version))
     p.add_argument('inp', help='MCNP input file')
     p.add_argument('-c', help=help_c,
                    type=str,
