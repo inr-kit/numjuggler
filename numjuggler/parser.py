@@ -9,6 +9,15 @@ from __future__ import print_function
 import re
 import warnings
 
+try:
+    # This clause define the fallback for cPickle, which is an accelerated
+    # version of pickle in Python2. In Python3 the acceleration is considered
+    # to be package-internal details, therefore the whole clause is an overkill
+    # -- an accelerated version will be imported with pickle, if available.
+    import cPickle
+except ImportError:
+    import pickle as cPickle
+
 # integer with one prefix character
 re_int = re.compile('\D{0,1}\d+')
 
@@ -1161,10 +1170,9 @@ def get_cards(inp, debug=None):
     except OSError:
         # print('No dump file exists')
         dt = it - 1.0
-    if it < dt:
+    if it < dt and debug is None:
         # print('Reading from dump')
         # dump is youger
-        import cPickle
         dfile = open(dname, 'r')
         cl = cPickle.load(dfile)
         for c in cl:
@@ -1175,9 +1183,11 @@ def get_cards(inp, debug=None):
         for c in get_cards_from_input(inp, debug=debug):
             yield c
             cl.append(c)
-        import cPickle
-        dfile = open(dname, 'w')
-        cPickle.dump(cl, dfile)
+        if debug is None:
+            # otherwise the instances of c contain the file object, which
+            # cannot be dumped.
+            dfile = open(dname, 'w')
+            cPickle.dump(cl, dfile)
 
 
 def get_cards_from_input(inp, debug=None):
