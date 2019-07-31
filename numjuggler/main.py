@@ -447,7 +447,7 @@ def main():
 
         elif args.mode == 'wrap':
             for c in cards:
-                print(c.card(True), end='')
+                print(c.card(wrap=True), end='')
 
         elif args.mode == 'rems':
             for c in cards:

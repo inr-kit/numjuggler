@@ -8,14 +8,14 @@ following string values:
 renum:
     The default mode. Cells, surfaces, materials and universes are renamed
     according to the -c, -s, -m, -u or --map command line options. The original
-    MCNP input file is not modified, the input file with renamed elements in
-    written to std.out.
+    MCNP input file is not modified, the input file with renamed elements is
+    written to standard output.
 
 
 info:
     The input file is analysed and ranges of used numbers for cells, surfaces,
-    ets. is written to std.out. Note that output of this mode can be used
-    (after necessary modifications) as input to the --map option.
+    ets. are written out. Note that the output of this mode can be used
+    (after necessary modifications) as the input to the --map option.
 
     The first two columns specify type (cells, surfaces, etc.) and the range of
     used numbers. The third column shows the amount of numbers in current range,
@@ -24,9 +24,9 @@ info:
 
 
 wrap:
-    Wrap lines in the MCNP input file to fit the 80-chars limit. Wrapped only
-    meaningful parts of the lines: if a line exceed 80 characters due to
-    comments (i.e.  any entries after "$" or "&"), it is not wrapped.
+    Wrap lines in the MCNP input file to fit the 80-chars limit. Only
+    the line meaningful parts are wrapped: if a line exceed 80 characters due to
+    a comment (i.e. any entries after "$" or "&"), it is not wrapped.
 
 
 rems:
