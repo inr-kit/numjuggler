@@ -1,13 +1,13 @@
 EXECUTION MODES
 ---------------
 
-The "--mode" argument defines the execution mode of the script. It can have the
+The ``--mode`` argument defines the execution mode of the script. It can have the
 following string values:
 
 
 renum:
     The default mode. Cells, surfaces, materials and universes are renamed
-    according to the -c, -s, -m, -u or --map command line options. The original
+    according to the -c, -s, -m, -u or ``--map`` command line options. The original
     MCNP input file is not modified, the input file with renamed elements is
     written to standard output.
 
@@ -15,7 +15,7 @@ renum:
 info:
     The input file is analysed and ranges of used numbers for cells, surfaces,
     ets. are written out. Note that the output of this mode can be used
-    (after necessary modifications) as the input to the --map option.
+    (after necessary modifications) as the input to the ``--map`` option.
 
     The first two columns specify type (cells, surfaces, etc.) and the range of
     used numbers. The third column shows the amount of numbers in current range,
@@ -52,7 +52,7 @@ remh:
 uexp:
     Add explicit "u=0" to cells with no "u" parameter. This can be useful when
     combining several input files into one model using universes. When cells
-    have explicit zero universes, they can be renumbered using the -u or --map
+    have explicit zero universes, they can be renumbered using the -u or ``--map``
     option in subsequent runs.
 
     Another universe can be specified with the -u option. IN this case, the
@@ -63,6 +63,7 @@ uexp:
          -c "1 --150" -- add universe option only to these cells.
          -c "!2" -- do not add universe to cell 2, even if it safisfies above
          criteria
+
 
 split:
     Split input into several files containing separate blocks. Output is written
@@ -95,6 +96,7 @@ mdupl:
 matan:
     Compare all meterials and list possible duplicates.
 
+
 sdupl:
     Report duplicate (close) surfaces.
 
@@ -109,7 +111,6 @@ extr:
 
     If the first entry of the -c keyword is `!`, extract all but the cells
     specified after.
-
 
 
 nogq:
@@ -138,18 +139,19 @@ count:
 nofill:
     Under counstruction: Removes all 'fill=' keywords from cell cards.
 
+
 fillempty:
     Add to all void non-filled cells with importance > 0 ``FILL = N``, where N
     is specified in the ``-u`` argument. When a material name is given with the
     -m argument, cells filled with this material are filled with N, instead of
     void cells.
 
-    When a file is given with the --map option, a list of cells is read from
+    When a file is given with the ``--map`` option, a list of cells is read from
     this file, and the "fill=" is added to these cells only, independent on
     cell's importance or material.
 
     UPD: the content of -u option is copied into the input file as is. For
-    example, to specify transformation in-place: -u '*fill=1 (0 0 5)'.
+    example, to specify transformation in-place: ``-u '*fill=1 (0 0 5)'``.
 
 
 matinfo:
@@ -158,7 +160,7 @@ matinfo:
 
     When -m option is given, it must be the mctal file with calculation of
     cell volumes, followed by the tally number (for a tally prepared with the
-    --mode tallies). In this case,  additionaly a summary of material weights
+    ``--mode`` tallies). In this case,  additionaly a summary of material weights
     is printed out.
 
     Example: read tally 14 from file `inp_m` to compute material masses
@@ -180,6 +182,7 @@ sinfo:
     it is used.
 
     At the end list all used types of surfaces.
+
 
 vsource:
     Output data cards describing source for computation of volumes. Model
@@ -208,7 +211,7 @@ tallies:
 
 
 addgeom:
-    appends strings, specified in --map file  to geometry definition of cells.
+    appends strings, specified in ``--map`` file  to geometry definition of cells.
     Example of the map file:
 
     10  -1 , #12 #35
@@ -283,6 +286,7 @@ zrotate:
     surfaces without transformations. And all existing pure rotational
     transformations are changed.
 
+    
 annotate:
     Adds text from map file as multiline comment right after the title.
 
