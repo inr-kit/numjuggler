@@ -594,7 +594,7 @@ def main():
                     c.get_values()
                     if c.dtype == 'Mn':
                         inp = []
-                        inp.append(c.input[0].replace('} ',
+                        inp.append(c.input[0].replace('}',
                                                       '} 1001 1.0 $ msimpl ', 1))
                         for i in c.input[1:]:
                             inp.append('c msimpl ' + i)
