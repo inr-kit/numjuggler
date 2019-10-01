@@ -11,6 +11,15 @@ import warnings
 import six
 from numjuggler import PartialFormatter
 
+try:
+    # This clause define the fallback for cPickle, which is an accelerated
+    # version of pickle in Python2. In Python3 the acceleration is considered
+    # to be package-internal details, therefore the whole clause is an overkill
+    # -- an accelerated version will be imported with pickle, if available.
+    import cPickle
+except ImportError:
+    import pickle as cPickle
+
 # integer with one prefix character
 re_int = re.compile('\D{0,1}\d+')
 
@@ -92,6 +101,10 @@ class Card(object):
 
         # card type by its position in the input. See CID class.
         self.ctype = ctype
+
+        # True if self.lines has changed after initialization
+        # used in remove_hash function
+        self.cstrg = False
 
         # data card type. Defined from the get_values() method.
         # Has sense only to data cards (see ctype). For other card types
@@ -829,7 +842,8 @@ def _split_cell(input_, self):
         vals.append(('', '#gsu'))
         fmts.append('{}')
         # insert placeholder for geometry suffix
-        inpt = inpt.replace(parm[0], '_' + parm[0], 1)
+        if parm:
+          inpt = inpt.replace(parm[0], '_' + parm[0], 1)
 
         # At this point all geom entries are replaced in inpt. The rest should
         # work only with the parm part of inpt. To ensure this, inpt is splitted
@@ -1159,10 +1173,9 @@ if six.PY2:
         except OSError:
             # print('No dump file exists')
             dt = it - 1.0
-        if it < dt:
+    if it < dt and debug is None:
             # print('Reading from dump')
             # dump is youger
-            import cPickle
             dfile = open(dname, 'r')
             cl = cPickle.load(dfile)
             for c in cl:
@@ -1173,7 +1186,9 @@ if six.PY2:
             for c in get_cards_from_input(inp, debug=debug):
                 yield c
                 cl.append(c)
-            import cPickle
+        if debug is None:
+            # otherwise the instances of c contain the file object, which
+            # cannot be dumped.
             dfile = open(dname, 'w')
             cPickle.dump(cl, dfile)
 else:
@@ -1356,10 +1371,10 @@ def are_close_lists(x, y, re=1e-6, pci=[]):
     """
     if len(x) != len(y):
         res = False
-        msg = 'Different lenght'
+        msg = 'Different length'
 
     if x == y:
-        return False
+        return True
 
     # pci -- list of indices that define elements of x and y to be checked for
     # proportionality only.

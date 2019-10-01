@@ -8,7 +8,9 @@ import os.path
 from numjuggler import numbering as mn
 from numjuggler import parser as mp
 from numjuggler import ri_notation as rin
+from numjuggler import string_cells as stc
 from numjuggler import likefunc as lf
+from numjuggler import version
 
 
 def multiline(lines, prefix=''):
@@ -61,14 +63,14 @@ and "-u" are ignored.
 descr = """
 Renumber cells, surfaces, materials and universes in MCNP input file. The
 original MCNP input file name must be given as command line option, the modified
-MCNP input file is written to std.out." """[1:]
+MCNP input file is written to std.out."""[1:]
 
 epilog = """
 Specify 'mode', 'map', 'limitations', or the mode name after -h for additional
 help.
 """
 
-modes = ('renum', 'info', 'wrap', 'uexp', 'rems', 'remc',
+modes = ('renum', 'info', 'wrap', 'uexp', 'rems', 'remc', 'remh', 'remrp', 'minfo',
          'split', 'mdupl', 'matan', 'sdupl', 'msimp', 'extr',
          'nogq', 'nogq2', 'count', 'nofill', 'matinfo', 'uinfo',
          'impinfo', 'fillempty', 'sinfo', 'vsource',
@@ -78,6 +80,8 @@ modes = ('renum', 'info', 'wrap', 'uexp', 'rems', 'remc',
 
 def main():
     p = ap.ArgumentParser(prog='numjuggler', description=descr, epilog=epilog)
+    p.add_argument('--version', action='version',
+                   version='%(prog)s {}'.format(version))
     p.add_argument('inp', help='MCNP input file')
     p.add_argument('-c', help=help_c,
                    type=str,
@@ -94,6 +98,12 @@ def main():
     p.add_argument('-t', help=help_s.format('Transformation'),
                    type=str,
                    default='0')
+    p.add_argument('-opt', help='remrp option. "cc" set all cells as complex cell; "all" remove all redundant parentheses ',
+                   type=str,
+                   choices=['nochg','cc','all'],
+                   default='nochg')
+    p.add_argument('-all', help='remrp option. All redundant parentheses are removed',
+                   action='store_true')
     p.add_argument('--map', help=help_m,
                    type=str,
                    default='')
@@ -185,6 +195,40 @@ def main():
                         ur = '{}'.format(r2 - r1 + 1)
                         print('{:<30s} {:>8s} {:>8s}'.format(rs, ur, fr))
                         rp = r2
+        elif args.mode == 'remh':
+            stc.remove_hash(cards,args.log)
+            for c in cards:
+               if c.cstrg :   # strg: flags setting if card has been modified with remove
+                  c.get_input()
+                  print(c.card(True), end='')
+               else:
+                  print(c.card(), end='')
+
+        elif args.mode == 'remrp':
+            print_log = False
+            if args.log != '' :
+               flog = open(args.log,'w')
+               flog.write('      Cell :  Parentheses removed\n')
+               print_log = True
+            for c in cards:
+               if c.ctype == mp.CID.cell:
+                  cardstr = stc.cell_card_string(''.join(c.lines))
+                  cardstr.geom.remove_redundant(remopt=args.opt)
+                  c.lines = cardstr.get_lines()
+                  c.get_input()
+                  if print_log:
+                     if cardstr.geom.removedp :
+                       cname = cardstr.headstr.split()[0]
+                       if (cardstr.geom.removedp[0] != cardstr.geom.removedp[1] ):
+                           flog.write(' {:>9s} : unbalanced\n'.format(cname))
+                       elif ( args.opt == 'nochg' and cardstr.geom.removedp[0] == 0) :
+                          flog.write(' {:>9s} : nochg\n'.format(cname))
+                       else:
+                          flog.write(' {:>9s} : {:>5}\n'.format(cname,cardstr.geom.removedp[0]))
+                  print(c.card(True), end='')
+               else:
+                  print(c.card(), end='')
+
         elif args.mode == 'ext':
             # output list of cells for ext:n card
             for c in cards:
@@ -404,7 +448,7 @@ def main():
 
         elif args.mode == 'wrap':
             for c in cards:
-                print(c.card(True), end='')
+                print(c.card(wrap=True), end='')
 
         elif args.mode == 'rems':
             for c in cards:
@@ -1015,6 +1059,7 @@ def main():
                     if c.stype == 'gq':
                         tuf, pl = nogq2.get_params(' '.join(c.input))
                         typ, a, o, t2, r2, cl = nogq2.get_cone_or_cyl(pl)
+                        print('c Log for GQ card {}'.format(c.name))
                         for comment in cl:
                             print(comment)
                         crd1 = crd.splitlines()
@@ -1312,6 +1357,62 @@ def main():
                 print(s, t, sorted(cs))
             for s in sorted(st):
                 print(s)
+
+        elif args.mode == 'minfo':
+
+            countfmt = """ Total words            :{d[0]:9}
+ Total hash             :{d[1]:9}
+ Hashcel                :{d[2]:9}
+ Hashsurf               :{d[3]:9}"""
+
+            cellfmt  = """ Longest cell           :{:9}
+ Words in longest cell  :{:9}"""
+
+            mcnpfmt  = """
+ MCNP estimation :
+     mlja                         :{:11}
+     Estimated memory requirement :     {:5.1f}{}
+     %cell length, %number #      :       {:4.1%}   {:4.1%}"""
+            hashcellfmt = "   {:>9s}        {d[0]:3}      {d[1]:3}      {d[2]:3}"
+            munits=['bytes','kB','MB','GB','TB']
+            stat_tot  = [0,0,0,0]
+            longest_c = None
+            maxword   = 0
+            ic = 0
+            mlja = 0
+            hashlist = []
+            for c in cards:
+               if c.ctype == mp.CID.cell:
+                  ic += 1
+                  cardstr = stc.cell_card_string(''.join(c.lines))
+                  cs=cardstr.get_stat()
+                  if ( ic > 50 and mlja > 3250) :
+                      mlja += 7 * cs[0]
+                  else:
+                      mlja += 17 * cs[0]
+                  if ( cs[0] > maxword ) :
+                      c.get_values()
+                      maxword   = cs[0]
+                      longest_c = c.name
+                  stat_tot=[a+b for a,b in zip(stat_tot,cs)]
+                  if ( cs[1] > 0 ):
+                      hashlist.append([cardstr.headstr.split()[0],cs[1:]])
+            mljacell = mlja
+            mlja = mlja + 2*17*maxword*stat_tot[1]
+            mem  = mlja * 4 * 4.   # 4 times mlja, 4 bytes integer
+            im = 0
+            while mem > 1024 :
+                im += 1
+                mem = mem / 1024
+
+            pcel = float(mljacell)/mlja
+            phash = 1 - pcel
+            print ( countfmt.format(d=stat_tot) )
+            print ( cellfmt.format( longest_c, maxword ))
+            print ( mcnpfmt.format( mlja, mem, munits[im], pcel, phash ))
+            print ( '\n   Cell name    total #   cell #   surf #'  )
+            for c in hashlist:
+                print ( hashcellfmt.format(c[0],d=c[1]) )
 
         elif args.mode == 'vsource':
 

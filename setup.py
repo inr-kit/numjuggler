@@ -1,16 +1,15 @@
 # from distutils.core import setup
 from setuptools import setup
 
+# Get the version from numjuggler/__init__.py
+fd = {}
+with open('./numjuggler/__version__.py', 'r') as f:
+    exec(f.read(), fd)
+    version = fd['__version__']
+
 
 setup(name='numjuggler',
-      # version: X.Y.Z, where:
-      #    X -- major version. Different major versions are not back-compatible.
-      #         New major version number, when code is rewritten
-      #
-      #    Y -- minor version. New minor version, when new function(s) added.
-      #
-      #    Z -- update, new update number when a bug is fixed.
-      version='2.40a.23',
+      version=version,  # __version__,  # '2.41a.27',
       description='MCNP input file renumbering tool',
       author='A.Travleev',
       author_email='anton.travleev@kit.edu',
