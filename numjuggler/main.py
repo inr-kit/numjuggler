@@ -8,6 +8,7 @@ import os.path
 from numjuggler import numbering as mn
 from numjuggler import parser as mp
 from numjuggler import ri_notation as rin
+from numjuggler import likefunc as lf
 
 
 def multiline(lines, prefix=''):
@@ -1503,7 +1504,6 @@ def main():
                 print(c.card(), end='')
 
         elif args.mode == 'renum':
-            import likefunc as lf
             if args.map:
                 maps = lf.read_map_file(args.map, log=args.log != '')
             else:
