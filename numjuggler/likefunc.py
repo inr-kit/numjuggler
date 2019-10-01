@@ -59,7 +59,7 @@ class LikeFunctionBase(object):
         self.ld = {}
 
         # Flag to store log
-        self.log = log
+        self.__lf = log
 
         # Default mapping, applied to elements not in ranges
         self.default = trivial
@@ -81,7 +81,7 @@ class LikeFunctionBase(object):
         return self.__call1(x)
 
     @property
-    def log(self, v):
+    def log(self):
         return self.__lf
 
     @log.setter
