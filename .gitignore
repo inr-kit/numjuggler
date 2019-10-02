@@ -1,3 +1,7 @@
+# Python setup folders
+build/
+*.egg-info
+
 # Byte-compiled
 *.pyc
 
