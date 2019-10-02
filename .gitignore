@@ -19,3 +19,8 @@ numjuggler.dot
 numjuggler.pdf
 numjuggler.sfood1
 numjuggler.sfood2
+
+# Pytest and Coverage
+*.log
+.coverage
+htmlcov/

@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import argparse as ap
+import sys
 from math import pi as Pi
 import os.path
 from numjuggler import numbering as mn
@@ -11,6 +12,13 @@ from numjuggler import ri_notation as rin
 from numjuggler import string_cells as stc
 from numjuggler import likefunc as lf
 from numjuggler import version
+
+try:
+    import pirs.mcnp.mctal.Mctal as Mctal, Vector3, Material
+except:
+    Material = None
+    Mctal = None
+    Vector3 = None
 
 
 def multiline(lines, prefix=''):
@@ -78,7 +86,7 @@ modes = ('renum', 'info', 'wrap', 'uexp', 'rems', 'remc', 'remh', 'remrp', 'minf
          'annotate', 'getc', 'mnew', 'combinec', 'cdens')
 
 
-def main():
+def main(args=sys.argv[1:]):
     p = ap.ArgumentParser(prog='numjuggler', description=descr, epilog=epilog)
     p.add_argument('--version', action='version',
                    version='%(prog)s {}'.format(version))
@@ -123,7 +131,7 @@ def main():
                     nargs='?',
                     default='',
                     const='gen')
-    harg, clo = ph.parse_known_args()
+    harg, clo = ph.parse_known_args(args)
     if harg.h:
         if harg.h == 'gen':
             p.print_help()
@@ -261,7 +269,7 @@ def main():
             # as well.
 
             import re
-            r = re.compile('(u)(\d+)')
+            r = re.compile(r'(u)(\d+)')
 
             csets = {}
             ulst = []
@@ -531,7 +539,7 @@ def main():
                     rms.update(rml)
 
             # read reference materials and create Materials
-            from pirs.mcnp import Material
+            assert Material is not None,  "pirs Material class is not imported"
             rmd = {}
             for c in cards:
                 if c.ctype == mp.CID.data:
@@ -748,9 +756,9 @@ def main():
 
         elif args.mode == 'zrotate':
 
-            from pirs.core.trageom import Vector3, pi
+            assert  Vector3 is not None, "pirs Vector3 class is not imported"
             ag = float(args.c)    # in grad
-            ar = ag * pi / 180.   # in radians
+            ar = ag * Pi / 180.   # in radians
 
             # new transformation number:
             trn = args.t
@@ -1235,7 +1243,7 @@ def main():
             # -m argument is the mctal name followed by tally number of the
             # tally containing cell volumes.
             if args.m != '0':
-                from pirs.mcnp.mctal import Mctal
+                assert Mctal is not None, "pirs Mctal class is not imported"
                 mctal = Mctal()
                 fname, tn = args.m.split()
                 tn = int(tn)

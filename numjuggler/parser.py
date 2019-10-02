@@ -9,6 +9,7 @@ from __future__ import print_function
 import re
 import warnings
 import six
+import os
 from numjuggler import PartialFormatter
 
 try:
@@ -21,21 +22,21 @@ except ImportError:
     import pickle as cPickle
 
 # integer with one prefix character
-re_int = re.compile('\D{0,1}\d+')
+re_int = re.compile(r'\D{0,1}\d+')
 
 # interior of square brackets for tally in lattices
-re_ind = re.compile('\[.+\]', flags=re.DOTALL)
+re_ind = re.compile(r'\[.+\]', flags=re.DOTALL)
 
 # repitition syntax of MCNP input file
-re_rpt = re.compile('\d+[ri]', flags=re.IGNORECASE)
+re_rpt = re.compile(r'\d+[ri]', flags=re.IGNORECASE)
 
 # imp or tmp parameters in cell card
-re_prm = re.compile('((imp:n|imp:p|tmp)\s+\S+)')
-re_prm = re.compile('[it]mp:*[npe]*[=\s]+\S+', flags=re.IGNORECASE)
-re_prm = re.compile('([it]mp:*[npe]*[=\s]+)(\S+)', flags=re.IGNORECASE)
+re_prm = re.compile(r'((imp:n|imp:p|tmp)\s+\S+)')
+re_prm = re.compile(r'[it]mp:*[npe]*[=\s]+\S+', flags=re.IGNORECASE)
+re_prm = re.compile(r'([it]mp:*[npe]*[=\s]+)(\S+)', flags=re.IGNORECASE)
 
 # fill keyword
-re_fll = re.compile('\*{0,1}fill[=\s]+', flags=re.IGNORECASE)
+re_fll = re.compile(r'\*{0,1}fill[=\s]+', flags=re.IGNORECASE)
 
 
 # If type specifier not given, any data type can be formatted:
@@ -602,7 +603,7 @@ class Card(object):
                 indent = ' '*5
                 if self.ctype == CID.title:
                     indent = 'c' + indent
-                tparts = re.split('\{.*?\}', self.template)[1:]
+                tparts = re.split(r'\{.*?\}', self.template)[1:]
                 # print 'wrapped inp', repr(self.template)
                 # print 'wrapped spl', repr(tparts)
                 newt = ['']  # new template parts
@@ -649,6 +650,7 @@ class Card(object):
                 tmpl = self.template
 
             card = partial_formmatter.format(tmpl, *inpt)
+            # card = tmpl.format(*inpt)
         else:
             card = self.template
         return card
@@ -1162,7 +1164,7 @@ if six.PY2:
         """
         from os import stat
         iname = inp
-        dname = '.{}.~'.format(inp)
+        dname = '.{}.~'.format(os.path.basename(inp))
         try:
             it = stat(iname).st_mtime
         except OSError as e:
@@ -1173,7 +1175,7 @@ if six.PY2:
         except OSError:
             # print('No dump file exists')
             dt = it - 1.0
-    if it < dt and debug is None:
+        if it < dt and debug is None:
             # print('Reading from dump')
             # dump is youger
             dfile = open(dname, 'r')

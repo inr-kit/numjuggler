@@ -1,19 +1,42 @@
-# from distutils.core import setup
+import sys
 from setuptools import setup
-
-# Get the version from numjuggler/__init__.py
-fd = {}
-with open('./numjuggler/__version__.py', 'r') as f:
-    exec(f.read(), fd)
-    version = fd['__version__']
+from setuptools.command.test import test as test_command
 
 
-setup(name='numjuggler',
-      version=version,  # __version__,  # '2.41a.27',
-      description='MCNP input file renumbering tool',
-      author='A.Travleev',
-      author_email='anton.travleev@kit.edu',
-      packages=['numjuggler', ],
-      # scripts = ['numjuggler/numjuggler'],
-      entry_points={'console_scripts': ['numjuggler = numjuggler.main:main']},
-      )
+# noinspection PyAttributeOutsideInit
+class PyTest(test_command):
+    """
+    See recomendations at https://docs.pytest.org/en/latest/goodpractices.html
+    """
+    user_options = [('pytest-args=', 'a', "Arguments to pass to pytest")]
+
+    def initialize_options(self):
+        test_command.initialize_options(self)
+        self.pytest_args = ""
+
+    def run_tests(self):
+        import shlex
+        # import here, cause outside the eggs aren't loaded
+        import pytest
+        errno = pytest.main(shlex.split(self.pytest_args))
+        sys.exit(errno)
+
+
+def load_version():
+    fd = {}
+    with open('./numjuggler/__version__.py', 'r') as f:
+        exec(f.read(), fd)
+        return fd['__version__']
+
+
+setup(
+    name='numjuggler',
+    version=load_version(),
+    description='MCNP input file renumbering tool',
+    author='A.Travleev',
+    author_email='anton.travleev@kit.edu',
+    packages=['numjuggler', ],
+    tests_require=['pytest', 'pytest-cov>=2.3.1'],
+    cmdclass={'test': PyTest},
+    entry_points={'console_scripts': ['numjuggler = numjuggler.main:main']},
+)
