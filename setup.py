@@ -1,5 +1,5 @@
 import sys
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.test import test as test_command
 
 
@@ -29,13 +29,17 @@ def load_version():
         return fd['__version__']
 
 
+packages = find_packages(
+    include=("numjuggler", "numjuggler.*",),
+)
+
 setup(
     name='numjuggler',
     version=load_version(),
     description='MCNP input file renumbering tool',
     author='A.Travleev',
     author_email='anton.travleev@kit.edu',
-    packages=['numjuggler', ],
+    packages=packages,
     tests_require=['pytest', 'pytest-cov>=2.3.1'],
     cmdclass={'test': PyTest},
     entry_points={'console_scripts': ['numjuggler = numjuggler.main:main']},
