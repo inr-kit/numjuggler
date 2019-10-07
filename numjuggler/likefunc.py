@@ -81,16 +81,17 @@ class LikeFunctionBase(object):
         return self.__call1(x)
 
     @property
-    def log(self, v):
+    def log(self):
         return self.__lf
 
     @log.setter
     def log(self, v):
+        v = bool(v)
         if v:
             self.__call__ = self.__call2
         else:
             self.__call__ = self.__call1
-        self.__ld = v
+        self.__lf = v
 
     def __str__(self):
         res = []
