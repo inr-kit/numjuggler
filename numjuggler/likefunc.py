@@ -7,7 +7,8 @@ different functions for different ranges and separate values.
 
 from __future__ import print_function
 from collections import OrderedDict
-import sys
+
+from numjuggler.utils.io import resolve_fname_or_stream
 
 
 def trivial(x):
@@ -68,29 +69,19 @@ class LikeFunctionBase(object):
         self.doc = ""
         return
 
-    def __call1(self, x):
-        res = self.get_value(x)
-        return res
-
-    def __call2(self, x):
-        res = self.get_value(x)
-        self.ld[x] = res
-        return res
-
     def __call__(self, x):
-        return self.__call1(x)
+        res = self.get_value(x)
+        if self.log:
+            self.ld[x] = res
+        return res
 
     @property
     def log(self):
         return self.__lf
 
     @log.setter
-    def log(self, v):
-        if v:
-            self.__call__ = self.__call2
-        else:
-            self.__call__ = self.__call1
-        self.__ld = v
+    def log(self, _log):
+        self.__lf = _log
 
     def __str__(self):
         res = []
@@ -101,25 +92,12 @@ class LikeFunctionBase(object):
         res.append('other -> {}'.format(self.default._mydoc))
         return '\n'.join(res)
 
-    def _get_log_file(self, fname):
-        if self.log is None:
+    def write_log_as_map(self, t, fname_or_stream=None):
+        if not self.log:
             raise ValueError("Cannon write log for unlogged mapping.")
-
-        # Define where to print
-        if fname is None:
-            fout = sys.stdout
-        else:
-            try:
-                fout = open(fname, 'w')
-            except:
-                print("Cannot open {}. Print to stdout".format(repr(fname)))
-                fout = sys.stdout
-        return fout
-
-    def write_log_as_map(self, t, fname=None):
-        fout = self._get_log_file(fname)
-        for nold, nnew in self.ld.items():
-            print('{} {}: {}'.format(t, nnew, nold), file=fout)
+        with resolve_fname_or_stream(fname_or_stream, "w") as fout:
+            for nold, nnew in self.ld.items():
+                print('{} {}: {}'.format(t, nnew, nold), file=fout)
 
 
 class LikeFunction(LikeFunctionBase):
@@ -261,7 +239,7 @@ def read_map_file(fname, log=False):
     # Dictionary type -> LikeFunction
     maps = {}
 
-    with open(fname, 'r') as mapfile:
+    with resolve_fname_or_stream(fname, 'r') as mapfile:
         for l in mapfile:
             t, ranges, f = _parse_map_line(l)
             if t is None:
