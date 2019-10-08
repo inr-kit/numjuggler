@@ -1056,7 +1056,7 @@ def _split_data(input_):
     elif (t[0][0].lower() == 'm' and
           'mode' not in t[0].lower() and
           'mesh' not in t[0].lower()):
-        # Mn, MTn or MPNn card
+        # This is the Mn, MTn or MPNn card
         ms = _get_int(t[0])
         inpt = inpt.replace(ms, tp, 1)
         vals.append((int(ms), 'mat'))

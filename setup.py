@@ -38,7 +38,7 @@ setup(
     version=load_version(),
     description='MCNP input file renumbering tool',
     author='A.Travleev',
-    author_email='anton.travleev@kit.edu',
+    author_email='anton.travleev@gmail.com',
     packages=packages,
     tests_require=['pytest', 'pytest-cov>=2.3.1'],
     cmdclass={'test': PyTest},
