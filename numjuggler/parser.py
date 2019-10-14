@@ -8,6 +8,9 @@ from __future__ import print_function
 
 import re
 import warnings
+import six
+import os
+from numjuggler import PartialFormatter
 
 try:
     # This clause define the fallback for cPickle, which is an accelerated
@@ -19,21 +22,21 @@ except ImportError:
     import pickle as cPickle
 
 # integer with one prefix character
-re_int = re.compile('\D{0,1}\d+')
+re_int = re.compile(r'\D{0,1}\d+')
 
 # interior of square brackets for tally in lattices
-re_ind = re.compile('\[.+\]', flags=re.DOTALL)
+re_ind = re.compile(r'\[.+\]', flags=re.DOTALL)
 
 # repitition syntax of MCNP input file
-re_rpt = re.compile('\d+[ri]', flags=re.IGNORECASE)
+re_rpt = re.compile(r'\d+[ri]', flags=re.IGNORECASE)
 
 # imp or tmp parameters in cell card
-re_prm = re.compile('((imp:n|imp:p|tmp)\s+\S+)')
-re_prm = re.compile('[it]mp:*[npe]*[=\s]+\S+', flags=re.IGNORECASE)
-re_prm = re.compile('([it]mp:*[npe]*[=\s]+)(\S+)', flags=re.IGNORECASE)
+re_prm = re.compile(r'((imp:n|imp:p|tmp)\s+\S+)')
+re_prm = re.compile(r'[it]mp:*[npe]*[=\s]+\S+', flags=re.IGNORECASE)
+re_prm = re.compile(r'([it]mp:*[npe]*[=\s]+)(\S+)', flags=re.IGNORECASE)
 
 # fill keyword
-re_fll = re.compile('\*{0,1}fill[=\s]+', flags=re.IGNORECASE)
+re_fll = re.compile(r'\*{0,1}fill[=\s]+', flags=re.IGNORECASE)
 
 
 # If type specifier not given, any data type can be formatted:
@@ -43,6 +46,7 @@ fmt_d = fmt_gen
 fmt_g = fmt_gen
 fmt_s = fmt_gen
 
+partial_formmatter = PartialFormatter()
 
 class __CIDClass(object):
     """
@@ -599,7 +603,7 @@ class Card(object):
                 indent = ' '*5
                 if self.ctype == CID.title:
                     indent = 'c' + indent
-                tparts = re.split('\{.*?\}', self.template)[1:]
+                tparts = re.split(r'\{.*?\}', self.template)[1:]
                 # print 'wrapped inp', repr(self.template)
                 # print 'wrapped spl', repr(tparts)
                 newt = ['']  # new template parts
@@ -645,7 +649,8 @@ class Card(object):
             else:
                 tmpl = self.template
 
-            card = tmpl.format(*inpt)
+            card = partial_formmatter.format(tmpl, *inpt)
+            # card = tmpl.format(*inpt)
         else:
             card = self.template
         return card
@@ -1150,44 +1155,54 @@ def is_blankline(l):
     """
     return l.strip() == ''
 
+if six.PY2:
+    def get_cards(inp, debug=None):
+        """
+        Check first existence of a dump file
 
-def get_cards(inp, debug=None):
-    """
-    Check first existence of a dump file
+        If dump exists and it is newwer than the input file, read the dump file
+        """
+        from os import stat
+        iname = inp
+        dname = '.{}.~'.format(os.path.basename(inp))
+        try:
+            it = stat(iname).st_mtime
+        except OSError as e:
+            raise e
 
-    If dump exists and it is newwer than the input file, read the dump file
-    """
-    from os import stat
-    iname = inp
-    dname = '.{}.~'.format(inp)
-    try:
-        it = stat(iname).st_mtime
-    except OSError as e:
-        raise e
-
-    try:
-        dt = stat(dname).st_mtime
-    except OSError:
-        # print('No dump file exists')
-        dt = it - 1.0
-    if it < dt and debug is None:
-        # print('Reading from dump')
-        # dump is youger
-        dfile = open(dname, 'r')
-        cl = cPickle.load(dfile)
-        for c in cl:
-            yield c
-    else:
-        # print('Reading from input')
-        cl = []
-        for c in get_cards_from_input(inp, debug=debug):
-            yield c
-            cl.append(c)
+        try:
+            dt = stat(dname).st_mtime
+        except OSError:
+            # print('No dump file exists')
+            dt = it - 1.0
+        if it < dt and debug is None:
+            # print('Reading from dump')
+            # dump is youger
+            dfile = open(dname, 'r')
+            cl = cPickle.load(dfile)
+            for c in cl:
+                yield c
+        else:
+            # print('Reading from input')
+            cl = []
+            for c in get_cards_from_input(inp, debug=debug):
+                yield c
+                cl.append(c)
         if debug is None:
             # otherwise the instances of c contain the file object, which
             # cannot be dumped.
             dfile = open(dname, 'w')
             cPickle.dump(cl, dfile)
+else:
+    def get_cards(inp, debug=None):
+        """
+        Check first existence of a dump file
+
+        If dump exists and it is newwer than the input file, read the dump file
+        """
+        iname = inp
+        for c in get_cards_from_input(inp, debug=debug):
+            yield c
 
 
 def get_cards_from_input(inp, debug=None):

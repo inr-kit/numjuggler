@@ -142,7 +142,7 @@ def complementary(ccell) :
     ccell.remove_comments()
 
     # insert external parenthesis
-    ccell.str= re.sub(leftp,"(\g<left>",ccell.str,count=1)
+    ccell.str= re.sub(leftp,r"(\g<left>",ccell.str,count=1)
     ccell.str= re.sub(rightp,r")\g<right>",ccell.str,count=1)
 
     # insert '&' as intersection operator
@@ -161,7 +161,7 @@ def complementary(ccell) :
     ccell.str=re.sub(number,chgsign,ccell.str)
 
     # insert external parenthesis
-    ccell.str= re.sub(leftp,"(\g<left>",ccell.str,count=1)
+    ccell.str= re.sub(leftp,r"(\g<left>",ccell.str,count=1)
     ccell.str= re.sub(rightp,r")\g<right>",ccell.str,count=1)
 
 # restore original comments
@@ -253,13 +253,13 @@ kept in the line"""
       geom=re.sub(blnkline,'',geom)
 
       # ensure 5 blanks continous line
-      geom=re.sub(contline,'\n     \g<start>',geom)
+      geom=re.sub(contline, r'\n     \g<start>',geom)
 
       if remopt != 'all' :
         # add parenthesis to set geom as MCNP complex cell
         if geom.find(':') == -1 and geom.find('#') == -1 :
-           geom=re.sub(startgeom,'\g<previous>(\g<start>',geom)
-           geom=re.sub(endgeom,'\g<last>)\g<next>',geom)
+           geom=re.sub(startgeom,r'\g<previous>(\g<start>',geom)
+           geom=re.sub(endgeom,r'\g<last>)\g<next>',geom)
 
       # restore original comments
       self.str = geom
@@ -267,7 +267,7 @@ kept in the line"""
       if remove_com: self.restore_comments()
 
       # subtitute comment $ with  blank line
-      self.str=re.sub(comdollar,'\nC\g<blnk>',self.str)
+      self.str=re.sub(comdollar,r'\nC\g<blnk>',self.str)
       pdiff = [x-y for x,y in zip(pmod,porg)]
       self.removedp=pdiff
       return
@@ -385,10 +385,10 @@ class cell_card_string():
       card=re.sub(blnkline,'',card)
 
       # subtitute comment $ with  blank line
-      card=re.sub(comdollar,'\nC\g<blnk>',card)
+      card=re.sub(comdollar, r'\nC\g<blnk>',card)
 
       # ensure 5 blanks continous line
-      card=re.sub(contline,'\n     \g<start>',card)
+      card=re.sub(contline, r'\n     \g<start>',card)
 
       if (card[-1] == '\n') : card=card[:-1]
       return  map(lambda x: x+'\n' ,card.split('\n'))

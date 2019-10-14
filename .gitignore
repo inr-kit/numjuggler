@@ -1,3 +1,7 @@
+# Python setup folders
+build/
+*.egg-info
+
 # Byte-compiled
 *.pyc
 
@@ -5,3 +9,18 @@
 .ropeproject/
 
 /.gtm/
+
+# Environments
+.cache/
+.idea/
+
+# Dev.scripts results
+numjuggler.dot
+numjuggler.pdf
+numjuggler.sfood1
+numjuggler.sfood2
+
+# Pytest and Coverage
+*.log
+.coverage
+htmlcov/
