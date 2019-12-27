@@ -1216,13 +1216,17 @@ def get_cards_from_input(inp, debug=None):
     def _yield(card, ct, ln):
         return Card(card, ct, ln, debug)
 
-    def replace_tab(l, cln):
-        if "\t" in l:
-            print("c Line {}: tab replaced with 4 spaces".format(cln + 1))
-            l = l.replace("\t", " "*4)
-        else:
-            l = l[:]
-        return l
+    def replace_tab(l, cln, ts=8):
+        """
+        Replace tabs as in MCNP5 (Vol II, Chapter 1 - Primer, I. MCNP INPUT FOR
+        SAMPLE PROBLEM, A. INP File, p. 1-3)
+        """
+        while '\t' in l:
+            i = l.index('\t')
+            ii = (i // ts + 1) * ts - i
+            print("c Line {}: tab replaced with {} spaces".format(cln + 1, ii))
+            l = l[:i] + ' '*ii + l[i+1:]
+        return l[:]
 
     cln = 0  # current line number. Used only for debug
     with open(inp, 'r') as f:
