@@ -1,0 +1,59 @@
+
+
+NUMJUGGLER
+
+
+About
+
+Numjuggler is a command line tool to perform specific tasks on the MCNP
+input files.
+
+Originally, it was developed at INR-KIT to rename cells, surfaces and
+materials in the MCNP input file. This task appeared often within the
+framework of ITER nuclear analyses, where different parts of the MCNP
+computational model were developed independently by different
+organizations and than merged together to the model describing the whole
+ITER facility. The merging of the model parts into a single MCNP input
+file was often complicated by the use of the same cell, surface and
+material numbers in the different model parts.
+
+Later, other features was added to numjuggler. Now it can be run in one
+of the execution modes, each performing particular task.
+
+The original development was previously conducted in the inr-kit
+repository. The author of numjuggler has its own fork at
+travleev/numjuggler.
+
+
+Installation
+
+TODO: the best way -- clone from travleev/numjuggler and install in the
+"development mode" using pip: pip install -e ..
+
+TODO: try under windows/anaconda(?)
+
+
+Invocation
+
+numjuggler is a command line tool written in Python. When properly
+installed, it can be invoked in one of the following ways:
+
+    >numjuggler           --mode <modename> [arguments] input.txt > input.new
+    >python -m numjuggler --mode <modename> [arguments] input.txt > input.new
+
+These two invocation forms are equal. The command line arguments in
+general contain the only necessary argument -- the original MCNP input
+file (in the above example input.txt). The output is written to standard
+output that can be redirected to a file. The execution mode is specified
+after the --mode flag. The other optional arguments can contain
+additional arguments relevant to the chosen mode.
+
+TODO: how to get interactive help.
+
+
+List of execution modes
+
+-   renum
+-   info
+-   cdens
+
