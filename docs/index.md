@@ -52,8 +52,9 @@ TODO: how to get interactive help.
 * [renum](renum.md)
 * [info](info.md)
 * [cdens](cdens.md)
-LIMITATIONS
------------
+
+
+## Limitations
 
 Cell parameters (importance, universe) can be read only from the cell cards
 block. Cell parameters specified in the data cards block are ignored.
