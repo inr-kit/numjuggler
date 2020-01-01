@@ -255,7 +255,8 @@ def main(args=sys.argv[1:]):
                     for tr in m.keys():
                         t, r = tr
                         if t == 'c' and  c.name in r:
-                            c.set_d(m[tr])
+                            dorig = c.get_d()
+                            c.set_d(dorig * m[tr])
                         if t == 'm' and c.get_m() in r:
                             c.set_d(m[tr])
                 print(c.card(), end='')
