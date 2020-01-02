@@ -55,6 +55,8 @@ TODO: how to get interactive help.
 * [renum](renum.md)
 * [info](info.md)
 * [cdens](cdens.md)
+* see [main.py](../numjuggler/main.py) for the complete list of modes
+* TODO: list here all available modes
 
 
 ## Limitations
