@@ -1,6 +1,8 @@
 # numjuggler
 
-Documentation for [travleev/numjuggler](https://github.com/travleev/numjuggler)
+Github repo: [travleev/numjuggler](https://github.com/travleev/numjuggler)
+
+Documentation source: [travleev/numjuggler, docs branch](https://github.com/travleev/numjuggler/tree/docs)
 
 ## About 
 
