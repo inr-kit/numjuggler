@@ -1,5 +1,5 @@
 # Description 
-The `--mode renum` is the default mode. Cells, surfaces, materials transformations and
+The `renum` mode is the default one. Cells, surfaces, materials transformations and
 universes are renamed according to the `-c`, `-s`, `-m`, `-u`, `-t` or `--map`
 command line options. The original MCNP input file is not modified, the input
 file with renamed elements is written to standard output.
@@ -32,7 +32,7 @@ is used.
 
 
 # Invocation examples
-All cells number in the input file ``input.orig`` are increased by 10. The
+All cells numbers in the input file ``input.orig`` are increased by 10. The
 resulting input file is written to standard output and redirected to
 ``input.new``:
 
