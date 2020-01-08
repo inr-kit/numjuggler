@@ -2,7 +2,14 @@
 
 Github repo: [travleev/numjuggler](https://github.com/travleev/numjuggler)
 
-Documentation source: [travleev/numjuggler, docs branch](https://github.com/travleev/numjuggler/tree/docs)
+The source for this documentation is located in the
+[docs](https://github.com/travleev/numjuggler/tree/docs) branch. The
+documentation is continually edited and updated: to get informed about updates
+consider to [turn on
+notifications](https://github.com/travleev/numjuggler/subscription). If you
+miss some information, feel free to [open an
+issue](https://github.com/travleev/numjuggler/issues/new).  Note: you need a
+github account. 
 
 ## About 
 
@@ -44,7 +51,7 @@ These two invocation forms are equal. The command line arguments in general
 contain the only necessary argument -- the original MCNP input file (in the
 above example `input.txt`). The output is written to standard output that can
 be redirected to a file. The execution mode is specified after the  `--mode`
-flag. The other optional arguments can contain additional arguments relevant
+flag. The other optional arguments can define additional parameters relevant
 to the chosen mode. 
 
 TODO: how to get interactive help. 
@@ -52,11 +59,47 @@ TODO: how to get interactive help.
 
 ## List of execution modes
 
-* [renum](renum.md)
-* [info](info.md)
-* [cdens](cdens.md)
-* see [main.py](https://github.com/travleev/numjuggler/blob/master/numjuggler/main.py) for the complete list of modes
-* TODO: list here all available modes
+In alphabetical order (links allude to existence of detailed information):
+
+* addgeom
+* annotate
+* [cdens](cdens.md) -- change cell density
+* combinec
+* count
+* extr
+* fillempty
+* getc
+* impinfo
+* [info](info.md) -- get input file statistics
+* matan
+* matinfo
+* mdupl
+* merge
+* minfo
+* mnew
+* msimp
+* nofill
+* nogq
+* nogq2
+* remc
+* remh
+* remrp
+* rems
+* remu
+* [renum](renum.md) -- renumber cells etc.
+* sdupl
+* sinfo
+* split
+* tallies
+* uexp
+* uinfo
+* vsource
+* wrap
+* zrotate
+
+Some information about the execution modes can be found in the source code, see
+[main.py](https://github.com/travleev/numjuggler/blob/master/numjuggler/main.py).
+
 
 
 ## Limitations
