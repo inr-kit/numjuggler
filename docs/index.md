@@ -61,7 +61,11 @@ TODO: how to get interactive help.
 
 ## List of execution modes
 
-In alphabetical order (links allude to existence of detailed information):
+Follow links for detailed information about the modes. When no detailed
+info here exists, some information about the execution modes can be
+found in the source code, see
+[main.py](https://github.com/travleev/numjuggler/blob/master/numjuggler/main.py).
+
 
 * addgeom
 * annotate
@@ -81,10 +85,10 @@ In alphabetical order (links allude to existence of detailed information):
 * mnew
 * msimp
 * nofill
-* nogq
-* nogq2
+* nogq -- obsolete (see nogq2)
+* nogq2 -- replace ``GQ`` surfaces with transformed cylinders, where applicable
 * remc
-* remh
+* remh -- replace cell complement operators ``#`` with actual geometry description
 * remrp
 * rems
 * remu
@@ -98,9 +102,6 @@ In alphabetical order (links allude to existence of detailed information):
 * vsource
 * wrap
 * zrotate
-
-Some information about the execution modes can be found in the source code, see
-[main.py](https://github.com/travleev/numjuggler/blob/master/numjuggler/main.py).
 
 
 
@@ -130,4 +131,6 @@ cells and surfaces in C-lite takes 5 -- 10 min.
 
 * Clear interface to the interactive help (the ``--help`` command line argument with options) that takes information from docs folder, i.e.
   originates from the same source as the online web documentation.
+  
+* Add missing description of the execution modes.  
   
