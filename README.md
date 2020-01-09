@@ -13,7 +13,7 @@ sections of code.
 
 
 # numjuggler
-Tool to rename cells, surfaces, materials and universes in MCNP input files.
+Tool to rename cells, surfaces, materials and universes in MCNP input files. See https://numjuggler.readthedocs.io
 
 ## Install
 
