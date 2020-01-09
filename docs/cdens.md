@@ -8,10 +8,11 @@ materials (or their ranges -- see descritpion of the map file format).
 
 ## Rationale
 
-One of the approaches to get the fist guess for the mesh
-weight-window through the model geometry is to decrease
-all material densities by several orders of magnitude and 
-perform particle transport to generate the weight window mesh. 
+One of the approaches to get the first guess for the 
+weight-window mesh through the model geometry is to decrease
+material densities for all cells between the source and tally region by several orders of magnitude and 
+perform particle transport to generate the weight-window mesh. Experience shows that the obtained weight-window mesh
+applied to the original (i.e. with nominal densities) model allready helps to improve statistics. 
 
 
 ## Invocation example
