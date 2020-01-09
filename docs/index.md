@@ -1,4 +1,4 @@
-# numjuggler
+# numjuggler documentation
 
 Github repo: [travleev/numjuggler](https://github.com/travleev/numjuggler)
 
@@ -10,6 +10,8 @@ notifications](https://github.com/travleev/numjuggler/subscription). If you
 miss some information, feel free to [open an
 issue](https://github.com/travleev/numjuggler/issues/new).  Note: you need a
 github account. 
+
+[TOC]
 
 ## About 
 
@@ -115,3 +117,17 @@ surface numbers in the source-related cards are nor recognized.
 Only a subset of execution modes were tested on the C-lite and C-model input
 files. Current implementation is rather ineffective: complete renumbering of
 cells and surfaces in C-lite takes 5 -- 10 min.
+
+## Roadmap
+
+* Organize automatic check of each new version: 
+  
+    * Write set of input files to be processed with different modes together with correspondent 
+      resulting files
+    * Connect to Travis CI (or similar) to perform automatic tests after each new commit to the master branch
+    * Add icons passed/failed to documentation and the repo's README
+    * Optional: formulate rules how to add new examples/test input files. 
+
+* Clear interface to the interactive help (the ``--help`` command line argument with options) that takes information from docs folder, i.e.
+  originates from the same source as the online web documentation.
+  
