@@ -1,0 +1,10 @@
+Test default mode
+11 0  6 -15 imp:n=1 imp:p=5
+12 112 1  15 imp:n=1 imp:p=5
+13 0 -6     imp:n=0 imp:p=0
+
+6 px 1
+15 py 10
+
+m112 1001.50c 1
+
