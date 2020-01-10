@@ -2,7 +2,16 @@
 
 # Assuming that numjuggler is installed properly 
 # and tests are in travis_tests(see .travis.yml)
-cd travis_tests
 
-numjuggler -c 10 -s 5 -m 100 i1 > i1.res && diff -w i1.ref i1.res > i1.diff || exit 1
+odir=$(pwd)
+
+cd $odir/travis_tests/renum
+i=i1
+o="-c 10 -s 5 -m 100"
+numjuggler $o $i.i > $i.res && diff -w $i.ref $i.res > $i.diff || exit 1
+
+cd $odir/travis_tests/remh
+i=nested_complement
+o="--mode remh"
+numjuggler $o $i.i > $i.res && diff -w $i.ref $i.res > $i.diff || exit 1
 
