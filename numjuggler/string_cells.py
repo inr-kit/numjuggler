@@ -391,7 +391,7 @@ class cell_card_string():
       card=re.sub(contline, r'\n     \g<start>',card)
 
       if (card[-1] == '\n') : card=card[:-1]
-      return  map(lambda x: x+'\n' ,card.split('\n'))
+      return  list(map(lambda x: x+'\n' ,card.split('\n')))
 
 
 ############################################################
