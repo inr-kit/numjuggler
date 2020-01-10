@@ -1,4 +1,7 @@
-# WARNING
+# Current status
+
+[![Build Status](https://travis-ci.org/travleev/numjuggler.svg?branch=master)](https://travis-ci.org/travleev/numjuggler) -- shows status of the tests defined in [travis_tests](travis_tests) folder. 
+
 The versions starting with 2.23a.17 should be considered as untested. Since
 version 2.22a.17, there were a lot of modifications toward more functionality,
 however, these changes were applied only to a small set of problems and
