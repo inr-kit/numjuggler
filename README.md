@@ -13,7 +13,11 @@ outdated. Therefore, the best way to see all current modes is to search for
 ``args.mode == `` string in ``main.py``, and read comments in the correspondent
 sections of code.
 
+# Documentation
 
+https://numjuggler.readthedocs.io should be considered as the main source of information. 
+
+<!---
 
 # numjuggler
 Tool to rename cells, surfaces, materials and universes in MCNP input files. See https://numjuggler.readthedocs.io
@@ -57,3 +61,4 @@ instructions:
 
 There is also a github repo, [numjuggler.docs](https://github.com/inr-kit/numjuggler.docs), related to numjuggler documentation.
 
+--->
