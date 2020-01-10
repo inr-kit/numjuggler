@@ -1,0 +1,13 @@
+Input file with tabs
+1 0 -1	imp:n=1	imp:p=1
+2 0  1
+	imp:n=0
+	imp:p=0
+	
+c surfaces
+1 so 10
+
+sdef pos 0 0 0
+
+
+

@@ -121,6 +121,9 @@ def main(args=sys.argv[1:]):
                    default='renum')
     p.add_argument('--debug', help='Additional output for debugging',
                    action='store_true')
+    p.add_argument('--preservetabs',
+                   help='Do not convert tabs to spaces. By default tabs are replaced with spaces according to MCNP5 rules (User''s manual Vol. II p. 1-3)',
+                   action='store_true')
     p.add_argument('--log', help='Log file.',
                    type=str,
                    default='')
@@ -171,7 +174,9 @@ def main(args=sys.argv[1:]):
             debuglog = None
 
         # process input file only once:
-        cards = list(mp.get_cards(args.inp, debuglog))
+        cards = list(mp.get_cards(args.inp,
+                                  debuglog,
+                                  preservetabs=args.preservetabs))
 
         if args.mode == 'info':
             indent = ' '*8
