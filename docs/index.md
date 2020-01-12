@@ -60,6 +60,9 @@ The ``--debug`` optional argument can be used in all execution modes and turns o
 messages to the file ``debug.juggler.<input>``, where ``<input>`` is the name of the 
 processed file. Information in debug can be usefull to understand processing errors.
 
+Some execution modes accept the ``--map`` optional argument that must be followed by the name of the mapping file.
+Desctiption of its format is here: [map](map.md).
+
 TODO: how to get interactive help. 
 
 
