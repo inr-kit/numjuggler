@@ -56,6 +56,10 @@ be redirected to a file. The execution mode is specified after the  `--mode`
 flag. The other optional arguments can define additional parameters relevant
 to the chosen mode. 
 
+The ``--debug`` optional argument can be used in all execution modes and turns on writing log
+messages to the file ``debug.juggler.<input>``, where ``<input>`` is the name of the 
+processed file. Information in debug can be usefull to understand processing errors.
+
 TODO: how to get interactive help. 
 
 
@@ -128,6 +132,8 @@ cells and surfaces in C-lite takes 5 -- 10 min.
     * Connect to Travis CI (or similar) to perform automatic tests after each new commit to the master branch
     * Add icons passed/failed to documentation and the repo's README
     * Optional: formulate rules how to add new examples/test input files. 
+
+* How to ensure that the version is updated each time a modification is introduced?
 
 * Clear interface to the interactive help (the ``--help`` command line argument with options) that takes information from docs folder, i.e.
   originates from the same source as the online web documentation.
