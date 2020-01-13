@@ -35,7 +35,7 @@ the execution modes, each performing particular task.
 
 The original development was previously conducted in the [inr-kit
 repository](https://github.com/inr-kit/numjuggler). The author of numjuggler
-has its own fork at [travleev/numjuggler](https://travleev/numjuggler). 
+has its own fork at [travleev/numjuggler](https://github.com/travleev/numjuggler). 
 
 
 ## Installation 
