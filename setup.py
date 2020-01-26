@@ -49,8 +49,8 @@ setup(
     classifiers=[
         'Development Status :: 4 - Beta',  # changed, when tests for all modes
         'Environment :: Console',
-        'Intendent Audience :: Sciense/Research',
-        'Intendent Audience :: Education',
+        'Intended Audience :: Science/Research',
+        'Intended Audience :: Education',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.7',

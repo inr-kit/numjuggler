@@ -1,6 +1,7 @@
 # Python setup folders
 build/
 *.egg-info
+numjuggler/version.py
 
 # Byte-compiled
 *.pyc
