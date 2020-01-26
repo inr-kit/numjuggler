@@ -16,6 +16,8 @@ sections of code.
 
 https://numjuggler.readthedocs.io should be considered as the main source of information. 
 
+There is also a github repo [numjuggler.docs](https://github.com/inr-kit/numjuggler.docs) containing presentations and reports related to numjuggler. 
+
 ## Install
 The numjuggler package is available at PyPI: https://pypi.org/project/numjuggler/. The preffered
 way to install it using pip:
