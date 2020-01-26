@@ -45,7 +45,8 @@ setup(
     tests_require=['pytest', 'pytest-cov>=2.3.1'],
     cmdclass={'test': PyTest},
     entry_points={'console_scripts': ['numjuggler = numjuggler.main:main']},
-    url='https://github.com/travleev/numjuggler',
+    # url='https://github.com/travleev/numjuggler',
+    url='https://numjuggler.readthedocs.io',
     keywords='MCNP ITER PARSER RENUMBER'.split(),
     classifiers=[
         'Development Status :: 4 - Beta',  # changed, when tests for all modes
