@@ -1,21 +1,32 @@
-# Current status
+# numjuggler
+Tool to rename cells, surfaces, materials and universes in MCNP input files. See https://numjuggler.readthedocs.io
+
+
+## Current status
 
 [![Build Status](https://travis-ci.org/travleev/numjuggler.svg?branch=master)](https://travis-ci.org/travleev/numjuggler) -- shows status of the tests defined in [travis_tests](travis_tests) folder. 
 
-The versions starting with 2.23a.17 should be considered as untested. Since
-version 2.22a.17, there were a lot of modifications toward more functionality,
-however, these changes were applied only to a small set of problems and
-therefore should be considered as not tested. If you experience any problems,
-consider fall back to the version 2.22a.17.
 
 Information in the help message, returned by ``numjuggler -h mode`` is
 outdated. Therefore, the best way to see all current modes is to search for
 ``args.mode == `` string in ``main.py``, and read comments in the correspondent
 sections of code.
 
-# Documentation
+## Documentation
 
 https://numjuggler.readthedocs.io should be considered as the main source of information. 
+
+## Install
+The numjuggler package is available at PyPI: https://pypi.org/project/numjuggler/. The preffered
+way to install it using pip:
+
+    >pip install numjuggler
+    
+Alternatively, one can clone from github and install in so-called development mode:
+
+    >git clone git@github.com:travleev/numjuggler.git
+    >cd numjuggler
+    >pip install -e .
 
 <!---
 
