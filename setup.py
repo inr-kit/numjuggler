@@ -22,20 +22,21 @@ class PyTest(test_command):
         sys.exit(errno)
 
 
-def load_version():
-    fd = {}
-    with open('./numjuggler/__version__.py', 'r') as f:
-        exec(f.read(), fd)
-        return fd['__version__']
-
-
 packages = find_packages(
     include=("numjuggler", "numjuggler.*",),
 )
 
+
+with open('README.md', 'r') as f:
+    long_description = f.read()
+    long_description_type = 'text/markdown'
+
+
 setup(
     name='numjuggler',
     description='MCNP input file renumbering tool',
+    long_description=long_description,
+    long_description_content_type=long_description_type,
     author='A.Travleev',
     author_email='anton.travleev@gmail.com',
     packages=packages,
