@@ -8,6 +8,8 @@ Tool to rename cells, surfaces, materials and universes in MCNP input files. See
 
 [![PyPI version](https://badge.fury.io/py/numjuggler.svg)](https://badge.fury.io/py/numjuggler) -- available from PyPI. 
 
+[![Documentation Status](https://readthedocs.org/projects/badge-demo/badge/?version=latest)](https://badge-demo.readthedocs.io/en/latest/?badge=latest) -- documentation
+
 
 Information in the help message, returned by ``numjuggler -h mode`` is
 outdated. Therefore, the best way to see all current modes is to search for
