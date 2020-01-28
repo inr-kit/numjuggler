@@ -1,6 +1,9 @@
 # numjuggler documentation
 
+
+
 Github repo: [travleev/numjuggler](https://github.com/travleev/numjuggler)
+[![Build Status](https://travis-ci.org/travleev/numjuggler.svg?branch=master)](https://travis-ci.org/travleev/numjuggler)
 
 The source for this documentation is located in the
 [docs](https://github.com/travleev/numjuggler/tree/docs) branch. The
@@ -32,7 +35,7 @@ the execution modes, each performing particular task.
 
 The original development was previously conducted in the [inr-kit
 repository](https://github.com/inr-kit/numjuggler). The author of numjuggler
-has its own fork at [travleev/numjuggler](https://travleev/numjuggler). 
+has its own fork at [travleev/numjuggler](https://github.com/travleev/numjuggler). 
 
 
 ## Installation 
@@ -55,6 +58,13 @@ above example `input.txt`). The output is written to standard output that can
 be redirected to a file. The execution mode is specified after the  `--mode`
 flag. The other optional arguments can define additional parameters relevant
 to the chosen mode. 
+
+The ``--debug`` optional argument can be used in all execution modes and turns on writing log
+messages to the file ``debug.juggler.<input>``, where ``<input>`` is the name of the 
+processed file. Information in debug can be usefull to understand processing errors.
+
+Some execution modes accept the ``--map`` optional argument that must be followed by the name of the mapping file.
+Desctiption of its format is here: [map](map.md).
 
 TODO: how to get interactive help. 
 
@@ -119,18 +129,22 @@ Only a subset of execution modes were tested on the C-lite and C-model input
 files. Current implementation is rather ineffective: complete renumbering of
 cells and surfaces in C-lite takes 5 -- 10 min.
 
-## Roadmap
+## ~~Roadmap~~ Ideas for future work
 
-* Organize automatic check of each new version: 
+- [ ] Organize automatic check of each new version: 
   
-    * Write set of input files to be processed with different modes together with correspondent 
+    - [ ] Write set of input files to be processed with different modes together with correspondent 
       resulting files
-    * Connect to Travis CI (or similar) to perform automatic tests after each new commit to the master branch
-    * Add icons passed/failed to documentation and the repo's README
-    * Optional: formulate rules how to add new examples/test input files. 
+    - [x] Connect to Travis CI (or similar) to perform automatic tests after each new commit to the master branch
+    - [x] Add icons passed/failed to documentation and the repo's README
+    - [ ] Optional: formulate rules how to add new examples/test input files. 
 
-* Clear interface to the interactive help (the ``--help`` command line argument with options) that takes information from docs folder, i.e.
-  originates from the same source as the online web documentation.
+- [ ] How to ensure that the version is updated each time a modification is introduced?
+
+    - [ ] Check the use of ``git tag`` and ``git describe``
+
+- [ ] Clear interface to the interactive help (the ``--help`` command line argument with options) that takes information from docs folder, i.e. originates from the same source as the online web documentation.
   
-* Add missing description of the execution modes.  
+- [ ] Add missing description of the execution modes.  
   
+- [ ] Connect to PyPi
