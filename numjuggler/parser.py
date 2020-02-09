@@ -36,7 +36,7 @@ re_prm = re.compile(r'[it]mp:*[npe]*[=\s]+\S+', flags=re.IGNORECASE)
 re_prm = re.compile(r'([it]mp:*[npe]*[=\s]+)(\S+)', flags=re.IGNORECASE)
 
 # fill keyword
-re_fll = re.compile(r'\*{0,1}fill[=\s]+', flags=re.IGNORECASE)
+re_fll = re.compile(r'\*{0,1}fill[=\s]+', flags=re.IGNORECASE)  # TODO: this will also match fill===
 
 
 # If type specifier not given, any data type can be formatted:
@@ -866,7 +866,7 @@ def _split_cell(input_, self):
     while t:
         s = t.pop(0)
         # print '_split_cell s: ', repr(s)
-        if s.lower() == 'u':  # or 'fill' in s.lower():
+        if s.lower() == 'u':
             vs = t.pop(0)
             vv = int(vs)
             vf = fmt_d(vs)
@@ -882,7 +882,10 @@ def _split_cell(input_, self):
             # if transformation in parentheses follows the universe number
             # immediately, split this manually:
             if '(' in vs:
-                vs, ttt = vs.split('(')
+                i = vs.index('(')
+                ttt = vs[i:]
+                vs = vs[:i]
+                # vs, ttt = vs.split('(')
                 t.insert(0, ttt)
             vv = int(vs)
             vf = fmt_d(vs)
@@ -890,7 +893,7 @@ def _split_cell(input_, self):
             inpt_parm = inpt_parm.replace(vs, tp, 1)
             vals.append((vv, vt))
             fmts.append(vf)
-            # TODO fill value can be followed by transformation in parentheses
+            # fill value can be followed by transformation in parentheses
             # Fill value can be optionally followed by transformation number of
             # transformation parameters in parentheses
             if t and '(' in t[0]:
