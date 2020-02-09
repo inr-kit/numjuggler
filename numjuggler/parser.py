@@ -251,18 +251,19 @@ class Card(object):
                     else:
                         # entries optionally delimited from comments by $ or &
                         # requires that delimiters prefixed with space
-                        d1 = l.find(' $')
-                        d2 = l.find(' &')
-                        if -1 < d1 and -1 < d2:
-                            # both & and $ in the line. Use the most left
-                            d = min(d1, d2)
-                        elif d1 == -1 and d2 == -1:
-                            # no delimiters at all, whole line is meaningful
-                            # except the new-line char
-                            d = len(l) - 1
-                        else:
-                            # only one of delimiters is given.
-                            d = max(d1, d2)
+                        d = index_(l, '$&')
+                        # d1 = l.find(' $')
+                        # d2 = l.find(' &')
+                        # if -1 < d1 and -1 < d2:
+                        #     # both & and $ in the line. Use the most left
+                        #     d = min(d1, d2)
+                        # elif d1 == -1 and d2 == -1:
+                        #     # no delimiters at all, whole line is meaningful
+                        #     # except the new-line char
+                        #     d = len(l) - 1
+                        # else:
+                        #     # only one of delimiters is given.
+                        #     d = max(d1, d2)
                         i = l[:d]
                         t = l[d:]
                         inpt.append(i)
@@ -1199,6 +1200,18 @@ else:
             yield c
 
 
+def index_(line, chars='$&'):
+    """
+    Find the first index of one of the chars in line.
+    """
+    r = re.compile('[{}]'.format(chars))
+    m = r.search(line)
+    if m:
+        i = m.end() - 1
+    else:
+        i = len(line) - 1
+    return i
+
 def get_cards_from_input(inp, debug=None, preservetabs=False):
     """
     Iterable, return instances of the Card() class representing
@@ -1236,8 +1249,9 @@ def get_cards_from_input(inp, debug=None, preservetabs=False):
         # Parse the 1-st line. It can be message, cell or data block.
         l = replace_tab(next(f), cln, preserve=preservetabs)
         cln += 1
-        kw = l.lower().split()[0]
-        if 'message:' == kw:
+        # kw = l.lower().split()[0]
+        kw = l.lstrip()
+        if 'message:' == kw[:8].lower():
             # read message block right here
             res = []
             while not is_blankline(l):
@@ -1249,7 +1263,7 @@ def get_cards_from_input(inp, debug=None, preservetabs=False):
             l = replace_tab(next(f), cln, preserve=preservetabs)
             cln += 1
             ncid = CID.title
-        elif 'continue' == kw:
+        elif 'continue' == kw[:8].lower():
             # input file for continue job. Contains only data block.
             ncid = CID.data
         else:
@@ -1306,7 +1320,7 @@ def get_cards_from_input(inp, debug=None, preservetabs=False):
                     card += cmnt  # prev. comment lines belong to this card.
                     cmnt = []
                 card.append(l)
-                cf = l.find('&', 0, 81) > -1
+                cf = l[:index_(l)].find('&', 0, 81) > -1
             elif is_commented(l):
                 # l is a line comment. Where it belongs (to the current card or
                 # to the next one), depends on the next line, therefore, just
@@ -1323,7 +1337,7 @@ def get_cards_from_input(inp, debug=None, preservetabs=False):
                 card = [l]
                 # if tally comment card, i.e. started with fc, the & character
                 # does not mean continuation.
-                cf = not is_fc_card(l) and l.find('&', 0, 81) > -1
+                cf = not is_fc_card(l) and l[:index_(l)].find('&', 0, 81) > -1
         if card:
             yield _yield(card, ncid, cln - len(card) - len(cmnt))
         if cmnt:
