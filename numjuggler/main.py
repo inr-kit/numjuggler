@@ -1245,6 +1245,13 @@ def main(args=sys.argv[1:]):
                 for c, d, u in res[m]:
                     print(fmt.format(c, d, u))
 
+                # Get a compact list of cells for material m
+                cells = list(e[0] for e in res[m])
+                print('Compact list of cells for material m{}: '.format(m))
+                print(' '.join(map(str, rin.shorten(cells))))
+
+
+
             # If -m option is given, try to get cell volumes from there
             # -m argument is the mctal name followed by tally number of the
             # tally containing cell volumes.
