@@ -43,6 +43,10 @@ setup(
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
     tests_require=['pytest', 'pytest-cov>=2.3.1'],
+    install_requires=[
+        'six',
+        'pathlib2',
+    ],
     cmdclass={'test': PyTest},
     entry_points={'console_scripts': ['numjuggler = numjuggler.main:main']},
     # url='https://github.com/travleev/numjuggler',
