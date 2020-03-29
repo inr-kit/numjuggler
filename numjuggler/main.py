@@ -252,18 +252,31 @@ def main(args=sys.argv[1:]):
         elif args.mode == 'cdens':
             from .mapparsers import cdens
             # Change density of cells, specified in the map file. Map file
-            m = cdens(args.map)
+            m, mdef = cdens(args.map)
 
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     c.get_values()
+                    modified = False
                     for tr in m.keys():
                         t, r = tr
                         if t == 'c' and  c.name in r:
                             dorig = c.get_d()
-                            c.set_d(dorig * m[tr])
+                            dnew = dorig * m[tr]
+                            c.set_d(str(dnew))
+                            modified = True
                         if t == 'm' and c.get_m() in r:
-                            c.set_d(m[tr])
+                            dorig = c.get_d()
+                            dnew = dorig * m[tr]
+                            c.set_d(str(dnew))
+                            modified = True
+                    if not modified and mdef:
+                        # If no rules to modify density found, apply the
+                        # default:
+                        dnew = c.get_d()
+                        for t, val in mdef.items():
+                            dnew *= val
+                        c.set_d(str(dnew))
                 print(c.card(), end='')
 
 
