@@ -15,3 +15,9 @@ i=nested_complement
 o="--mode remh"
 numjuggler $o $i.i > $i.res && diff -w $i.ref $i.res > $i.diff || exit 1
 
+cd $odir/travis_tests/cdens
+i=inp.i
+o="--mode cdens"
+for m in $(ls map?); do
+    numjuggler $o --map $m inp.i > inp.$m && diff -w inp.$m.ref inp.$m > $m.diff || exit 1
+done
