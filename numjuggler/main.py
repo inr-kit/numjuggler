@@ -262,21 +262,23 @@ def main(args=sys.argv[1:]):
                         t, r = tr
                         if t == 'c' and  c.name in r:
                             dorig = c.get_d()
-                            dnew = dorig * m[tr]
-                            c.set_d(str(dnew))
+                            coef, fmt = m[tr]
+                            dnew = dorig * coef
+                            c.set_d(fmt.format(dnew))
                             modified = True
                         if t == 'm' and c.get_m() in r:
                             dorig = c.get_d()
-                            dnew = dorig * m[tr]
-                            c.set_d(str(dnew))
+                            coef, fmt = m[tr]
+                            dnew = dorig * coef
+                            c.set_d(fmt.format(dnew))
                             modified = True
                     if not modified and mdef:
                         # If no rules to modify density found, apply the
                         # default:
                         dnew = c.get_d()
-                        for t, val in mdef.items():
+                        for t, (val, fmt) in mdef.items():
                             dnew *= val
-                        c.set_d(str(dnew))
+                        c.set_d(fmt.format(dnew))
                 print(c.card(), end='')
 
 

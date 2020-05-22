@@ -6,6 +6,7 @@ from numjuggler.likefunc import _get_map_ranges
 
 # Parsers of map files for different modes
 
+
 def lines(fname):
     """
     Iterator over meaningful lines in the map file.
@@ -17,10 +18,17 @@ def lines(fname):
             ll = l.split('#')[0].strip()
             if ll and ':' in ll:
                 t = ll[0]  # 1-st entry, c, u, m etc
-                ranges, val = ll[1:].split(':')
+                ranges, val = ll[1:].split(':', 1)
                 ranges = ranges.strip()
                 rr = list(_get_map_ranges(ranges))
-                yield t, rr, val
+
+                # TODO: extract format from val, if val has more than 1 entry
+                if '{' in val:
+                    val, fmt = val.split('{')
+                    fmt = '{' + fmt
+                else:
+                    fmt = '{:10.3e}'  # default formatting for density
+                yield t, rr, val, fmt
 
 
 def cdens(fname):
@@ -29,10 +37,10 @@ def cdens(fname):
     """
     res = OrderedDict()
     resdef = {}
-    for t, rr, val in lines(fname):
+    for t, rr, val, fmt in lines(fname):
         for r in rr:
-            res[(t, r)] = float(val)
+            res[(t, r)] = float(val), fmt
         # rr can be an empty list that means the default rule
         if len(rr) == 0:
-            resdef[t] = float(val)
+            resdef[t] = float(val), fmt
     return res, resdef

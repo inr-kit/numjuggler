@@ -32,4 +32,10 @@ The content of `densities.txt`:
     m 5: 1e-3        # For all cells filled with material 5 multiply density by 1e-3
 
 
+UPD 2020.05.22: format specifier can be added as the last entry on the line in the map file. The format specifier is passed as a string and its `.format()` method is used
+to convert density to string representation. For example (compare with above):
 
+    c 1 -- 10: 0.01  {:7.3f} # Specify format for new densities
+    c 12: 0.1                # Use default formatting
+    
+    m 5: 1e-3        {:10.3e}  # Specify format
