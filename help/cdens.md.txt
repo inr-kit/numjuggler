@@ -1,0 +1,34 @@
+
+
+DESCRIPTION
+
+
+Change cell densities according to the map file.
+
+In the map file one can specify coefficients to multiply the original
+input file densities. The coefficients can be specified for particular
+cells and/or materials (or their ranges -- see descritpion of the map
+file format).
+
+
+Rationale
+
+One of the approaches to get the fist guess for the mesh weight-window
+through the model geometry is to decrease all material densities by
+several orders of magnitude and perform particle transport to generate
+the weight window mesh.
+
+
+Invocation example
+
+in the following example, the map file is densities.txt, the original
+input file is input.orig and the new input file is written to input.new:
+
+    >numjuggler --mode cdens --map densities.txt input.orig > input.new
+
+The content of densities.txt:
+
+    c 1 -- 10: 0.01  # In cells 1 to 10 multiply density by 0.01
+    c 12: 0.1        # Multiply cell 12 density by 0.1
+
+    m 5: 1e-3        # For all cells filled with material 5 multiply density by 1e-3

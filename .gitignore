@@ -1,6 +1,7 @@
 # Python setup folders
 build/
 *.egg-info
+numjuggler/version.py
 
 # Byte-compiled
 *.pyc
@@ -24,3 +25,7 @@ numjuggler.sfood2
 *.log
 .coverage
 htmlcov/
+
+# Travis tests
+travis_tests/*.diff
+travis_tests/*.res

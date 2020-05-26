@@ -121,6 +121,9 @@ def main(args=sys.argv[1:]):
                    default='renum')
     p.add_argument('--debug', help='Additional output for debugging',
                    action='store_true')
+    p.add_argument('--preservetabs',
+                   help='Do not convert tabs to spaces. By default tabs are replaced with spaces according to MCNP5 rules (User''s manual Vol. II p. 1-3)',
+                   action='store_true')
     p.add_argument('--log', help='Log file.',
                    type=str,
                    default='')
@@ -171,7 +174,9 @@ def main(args=sys.argv[1:]):
             debuglog = None
 
         # process input file only once:
-        cards = list(mp.get_cards(args.inp, debuglog))
+        cards = list(mp.get_cards(args.inp,
+                                  debuglog,
+                                  preservetabs=args.preservetabs))
 
         if args.mode == 'info':
             indent = ' '*8
@@ -247,17 +252,33 @@ def main(args=sys.argv[1:]):
         elif args.mode == 'cdens':
             from .mapparsers import cdens
             # Change density of cells, specified in the map file. Map file
-            m = cdens(args.map)
+            m, mdef = cdens(args.map)
 
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     c.get_values()
+                    modified = False
                     for tr in m.keys():
                         t, r = tr
                         if t == 'c' and  c.name in r:
-                            c.set_d(m[tr])
+                            dorig = c.get_d()
+                            coef, fmt = m[tr]
+                            dnew = dorig * coef
+                            c.set_d(fmt.format(dnew))
+                            modified = True
                         if t == 'm' and c.get_m() in r:
-                            c.set_d(m[tr])
+                            dorig = c.get_d()
+                            coef, fmt = m[tr]
+                            dnew = dorig * coef
+                            c.set_d(fmt.format(dnew))
+                            modified = True
+                    if not modified and mdef:
+                        # If no rules to modify density found, apply the
+                        # default:
+                        dnew = c.get_d()
+                        for t, (val, fmt) in mdef.items():
+                            dnew *= val
+                        c.set_d(fmt.format(dnew))
                 print(c.card(), end='')
 
 
@@ -1238,6 +1259,13 @@ def main(args=sys.argv[1:]):
 
                 for c, d, u in res[m]:
                     print(fmt.format(c, d, u))
+
+                # Get a compact list of cells for material m
+                cells = list(e[0] for e in res[m])
+                print('Compact list of cells for material m{}: '.format(m))
+                print(' '.join(map(str, rin.shorten(cells))))
+
+
 
             # If -m option is given, try to get cell volumes from there
             # -m argument is the mctal name followed by tally number of the

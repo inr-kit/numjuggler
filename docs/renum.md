@@ -1,0 +1,60 @@
+# Description 
+The `renum` mode is the default one. Cells, surfaces, materials transformations and
+universes are renamed according to the `-c`, `-s`, `-m`, `-u`, `-t` or `--map`
+command line options. The original MCNP input file is not modified, the input
+file with renamed elements is written to standard output.
+
+# Optional arguments
+In this mode, the cell, surface, material, transformation  and/or universe
+numbers are modified by adding terms, specified in the command line. 
+
+The following command line options are used to specify terms to be added:
+
+* `-c <expr>` for cells
+* `-s <expr>` for surfaces
+* `-m <expr>` for materials
+* `-t <expr>` for transformations
+* `-u <expr>` for universes
+* `--map <filename>` for any objects (see below)
+
+Each of the above flags except `--map` must be followed by an expression
+`<expr>` that defines the term to be addedto the original number. This
+expression can be one of the following:
+
+* `<N>` -- simple integer value. This value is added to all cells, materials,
+  etc.
+* `i` -- the character `'i'`. In this case, the corresponding objects in the
+  input files are numbered with increasing numbers starting from 1 (indexed). 
+  
+The `--map` flag must be followed by a file name of the [map file](map.md).
+When both `--map` and one of the `-c`, `-s` etc. flags is given, the latter
+is used. 
+
+
+# Invocation examples
+All cells numbers in the input file ``input.orig`` are increased by 10. The
+resulting input file is written to standard output and redirected to
+``input.new``:
+
+    >numjuggler              -c 10 input.orig > input.new
+    >numjuggler --mode renum -c 10 input.orig > input.new
+    
+Both variants are equal, since the `--mode renum` is the default one. Similar,
+one can specify terms to be added to surfaces, materials and transformations,
+repsectively with the `-s`, `-m` and `-t` command line arguments:
+
+    >numjuggler -s 5 -m 10 -t 100 input.orig > input.new
+    
+In this example, surface numbers are increased by 5, material numbers are
+increased by 10 (zero material remains unchanged) and all transformation
+numbers are increased by 100.
+
+More complex renaming rules can be deifned in the map file. Here one can specify 
+different renaming rules for different cells or cell ranges. For example:
+
+    >numjuggler --map map.txt input.orig > input.new
+    
+where `map.txt` is a text file, which format is described in details here: [map file format](map.md). 
+
+
+

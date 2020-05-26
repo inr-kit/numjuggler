@@ -36,17 +36,20 @@ re_prm = re.compile(r'[it]mp:*[npe]*[=\s]+\S+', flags=re.IGNORECASE)
 re_prm = re.compile(r'([it]mp:*[npe]*[=\s]+)(\S+)', flags=re.IGNORECASE)
 
 # fill keyword
-re_fll = re.compile(r'\*{0,1}fill[=\s]+', flags=re.IGNORECASE)
+re_fll = re.compile(r'\*{0,1}fill[=\s]+', flags=re.IGNORECASE)  # TODO: this will also match fill===
 
 
 # If type specifier not given, any data type can be formatted:
 def fmt_gen(s):
     return '{' + ':<{}'.format(len(s)) + '}'
+
+
 fmt_d = fmt_gen
 fmt_g = fmt_gen
 fmt_s = fmt_gen
 
 partial_formmatter = PartialFormatter()
+
 
 class __CIDClass(object):
     """
@@ -87,6 +90,7 @@ class __CIDClass(object):
         else:
             print('No attribute with name', cid)
             raise ValueError()
+
 
 CID = __CIDClass()
 
@@ -247,18 +251,19 @@ class Card(object):
                     else:
                         # entries optionally delimited from comments by $ or &
                         # requires that delimiters prefixed with space
-                        d1 = l.find(' $')
-                        d2 = l.find(' &')
-                        if -1 < d1 and -1 < d2:
-                            # both & and $ in the line. Use the most left
-                            d = min(d1, d2)
-                        elif d1 == -1 and d2 == -1:
-                            # no delimiters at all, whole line is meaningful
-                            # except the new-line char
-                            d = len(l) - 1
-                        else:
-                            # only one of delimiters is given.
-                            d = max(d1, d2)
+                        d = index_(l, '$&')
+                        # d1 = l.find(' $')
+                        # d2 = l.find(' &')
+                        # if -1 < d1 and -1 < d2:
+                        #     # both & and $ in the line. Use the most left
+                        #     d = min(d1, d2)
+                        # elif d1 == -1 and d2 == -1:
+                        #     # no delimiters at all, whole line is meaningful
+                        #     # except the new-line char
+                        #     d = len(l) - 1
+                        # else:
+                        #     # only one of delimiters is given.
+                        #     d = max(d1, d2)
                         i = l[:d]
                         t = l[d:]
                         inpt.append(i)
@@ -534,11 +539,11 @@ class Card(object):
         # values and input. In both cases, the new card should be checked for
         # empty lines.
 
-        # Case (2): Modify existing input and values. All content after the FILL
-        # keyword is parsed and thus is given in values, while input provides
-        # placefor them. THus, simply replaceing values with spaces will almost
-        # do the job. The remaining part -- the keyword itself that is presented
-        # in input.
+        # Case (2): Modify existing input and values. All content after the
+        # FILL keyword is parsed and thus is given in values, while input
+        # provides placefor them. THus, simply replaceing values with spaces
+        # will almost do the job. The remaining part -- the keyword itself that
+        # is presented in input.
 
         # replace with spaces all FILL-related tokens
         vals = []  # new values list.
@@ -562,8 +567,8 @@ class Card(object):
         # Remove FILL from the input
         for n, i in enumerate(self.input):
             if 'fill' in i.lower():
-                # This part of input contains the fill keyword. This keyword
-                # is optionally prepended with an asterix and followed by a sign
+                # This part of input contains the fill keyword. This keyword is
+                # optionally prepended with an asterix and followed by a sign
                 i = re_fll.sub(' ', i)
                 self.input[n] = i
                 break
@@ -575,16 +580,6 @@ class Card(object):
         """
         Return multi-line string representing the card.
         """
-        # if self.ctype == CID.cell and self.geom_prefix + self.geom_suffix != '':
-        #     newvals = []
-        #     for v, t in self.values:
-        #         if t == '#gpr':
-        #             v = self.geom_prefix
-        #         elif t == '#gsu':
-        #             v = self.geom_suffix
-        #         newvals.append((v, t))
-        #     self.values = newvals
-
         if self.input:
             # put values back to meaningful parts:
             inpt = '\n'.join(self.input)
@@ -871,7 +866,7 @@ def _split_cell(input_, self):
     while t:
         s = t.pop(0)
         # print '_split_cell s: ', repr(s)
-        if s.lower() == 'u':  # or 'fill' in s.lower():
+        if s.lower() == 'u':
             vs = t.pop(0)
             vv = int(vs)
             vf = fmt_d(vs)
@@ -887,7 +882,10 @@ def _split_cell(input_, self):
             # if transformation in parentheses follows the universe number
             # immediately, split this manually:
             if '(' in vs:
-                vs, ttt = vs.split('(')
+                i = vs.index('(')
+                ttt = vs[i:]
+                vs = vs[:i]
+                # vs, ttt = vs.split('(')
                 t.insert(0, ttt)
             vv = int(vs)
             vf = fmt_d(vs)
@@ -895,7 +893,7 @@ def _split_cell(input_, self):
             inpt_parm = inpt_parm.replace(vs, tp, 1)
             vals.append((vv, vt))
             fmts.append(vf)
-            # TODO fill value can be followed by transformation in parentheses
+            # fill value can be followed by transformation in parentheses
             # Fill value can be optionally followed by transformation number of
             # transformation parameters in parentheses
             if t and '(' in t[0]:
@@ -1156,7 +1154,7 @@ def is_blankline(l):
     return l.strip() == ''
 
 if six.PY2:
-    def get_cards(inp, debug=None):
+    def get_cards(inp, debug=None, preservetabs=False):
         """
         Check first existence of a dump file
 
@@ -1185,7 +1183,7 @@ if six.PY2:
         else:
             # print('Reading from input')
             cl = []
-            for c in get_cards_from_input(inp, debug=debug):
+            for c in get_cards_from_input(inp, debug=debug, preservetabs=preservetabs):
                 yield c
                 cl.append(c)
         if debug is None:
@@ -1194,18 +1192,30 @@ if six.PY2:
             dfile = open(dname, 'w')
             cPickle.dump(cl, dfile)
 else:
-    def get_cards(inp, debug=None):
+    def get_cards(inp, debug=None, preservetabs=False):
         """
         Check first existence of a dump file
 
         If dump exists and it is newwer than the input file, read the dump file
         """
         iname = inp
-        for c in get_cards_from_input(inp, debug=debug):
+        for c in get_cards_from_input(inp, debug=debug, preservetabs=preservetabs):
             yield c
 
 
-def get_cards_from_input(inp, debug=None):
+def index_(line, chars='$&'):
+    """
+    Find the first index of one of the chars in line.
+    """
+    r = re.compile('[{}]'.format(chars))
+    m = r.search(line)
+    if m:
+        i = m.end() - 1
+    else:
+        i = len(line) - 1
+    return i
+
+def get_cards_from_input(inp, debug=None, preservetabs=False):
     """
     Iterable, return instances of the Card() class representing
     cards in the input file.
@@ -1216,13 +1226,20 @@ def get_cards_from_input(inp, debug=None):
     def _yield(card, ct, ln):
         return Card(card, ct, ln, debug)
 
-    def replace_tab(l, cln):
-        if "\t" in l:
-            print("c Line {}: tab replaced with 4 spaces".format(cln + 1))
-            l = l.replace("\t", " "*4)
+    def replace_tab(l, cln, preserve=False, ts=8):
+        """
+        Replace tabs as in MCNP5 (Vol II, Chapter 1 - Primer, I. MCNP INPUT FOR
+        SAMPLE PROBLEM, A. INP File, p. 1-3)
+        """
+        if preserve:
+            return l[:]
         else:
-            l = l[:]
-        return l
+            while '\t' in l:
+                i = l.index('\t')
+                ii = (i // ts + 1) * ts - i
+                print("c Line {}: tab replaced with {} spaces".format(cln + 1, ii))
+                l = l[:i] + ' '*ii + l[i+1:]
+            return l[:]
 
     cln = 0  # current line number. Used only for debug
     with open(inp, 'r') as f:
@@ -1233,22 +1250,23 @@ def get_cards_from_input(inp, debug=None):
         ncid = 0  # 0 is not used in card ID dictionary CID.
 
         # Parse the 1-st line. It can be message, cell or data block.
-        l = replace_tab(next(f), cln)
+        l = replace_tab(next(f), cln, preserve=preservetabs)
         cln += 1
-        kw = l.lower().split()[0]
-        if 'message:' == kw:
+        # kw = l.lower().split()[0]
+        kw = l.lstrip()
+        if 'message:' == kw[:8].lower():
             # read message block right here
             res = []
             while not is_blankline(l):
                 res.append(l)
-                l = replace_tab(next(f), cln)
+                l = replace_tab(next(f), cln, preserve=preservetabs)
                 cln += 1
             yield _yield(res, CID.message, cln-1)  # message card
             yield _yield(l, CID.blankline, cln)      # blank line
-            l = replace_tab(next(f), cln)
+            l = replace_tab(next(f), cln, preserve=preservetabs)
             cln += 1
             ncid = CID.title
-        elif 'continue' == kw:
+        elif 'continue' == kw[:8].lower():
             # input file for continue job. Contains only data block.
             ncid = CID.data
         else:
@@ -1282,7 +1300,7 @@ def get_cards_from_input(inp, debug=None):
         card = []  # card is a list of lines.
         cmnt = []  # list of comment lines.
         for l in f:
-            l = replace_tab(l, cln)
+            l = replace_tab(l, cln, preserve=preservetabs)
             cln += 1
             if is_blankline(l):
                 # blank line delimiter. Stops card even if previous line
@@ -1305,7 +1323,7 @@ def get_cards_from_input(inp, debug=None):
                     card += cmnt  # prev. comment lines belong to this card.
                     cmnt = []
                 card.append(l)
-                cf = l.find('&', 0, 81) > -1
+                cf = l[:index_(l)].find('&', 0, 81) > -1
             elif is_commented(l):
                 # l is a line comment. Where it belongs (to the current card or
                 # to the next one), depends on the next line, therefore, just
@@ -1322,7 +1340,7 @@ def get_cards_from_input(inp, debug=None):
                 card = [l]
                 # if tally comment card, i.e. started with fc, the & character
                 # does not mean continuation.
-                cf = not is_fc_card(l) and l.find('&', 0, 81) > -1
+                cf = not is_fc_card(l) and l[:index_(l)].find('&', 0, 81) > -1
         if card:
             yield _yield(card, ncid, cln - len(card) - len(cmnt))
         if cmnt:

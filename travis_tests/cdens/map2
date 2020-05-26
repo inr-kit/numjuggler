@@ -1,0 +1,5 @@
+# Set density coeff to each cell
+c 1: 0.1
+c 2: 0.01
+c 3: 0.001
+c 4: -0.0001  # this makes no sence, but formally allowable

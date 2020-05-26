@@ -1,0 +1,14 @@
+site_name: Numjuggler documentation
+
+nav:
+    - Home: index.md
+    - Modes: 
+        - renum: renum.md
+        - info: info.md
+        - cdens: cdens.md
+
+    - Map file: map.md
+
+
+theme: readthedocs
+

@@ -1,16 +1,40 @@
-# WARNING
-The versions starting with 2.23a.17 should be considered as untested. Since
-version 2.22a.17, there were a lot of modifications toward more functionality,
-however, these changes were applied only to a small set of problems and
-therefore should be considered as not tested. If you experience any problems,
-consider fall back to the version 2.22a.17.
+# numjuggler
+Tool to rename cells, surfaces, materials and universes in MCNP input files. See https://numjuggler.readthedocs.io
+
+
+## Current status
+
+[![Build Status](https://travis-ci.org/travleev/numjuggler.svg?branch=master)](https://travis-ci.org/travleev/numjuggler) -- shows status of the tests defined in [travis_tests](travis_tests) folder. 
+
+[![PyPI version](https://badge.fury.io/py/numjuggler.svg)](https://badge.fury.io/py/numjuggler) -- available from PyPI. 
+
+[![Documentation Status](https://readthedocs.org/projects/badge-demo/badge/?version=latest)](https://badge-demo.readthedocs.io/en/latest/?badge=latest) -- documentation
+
 
 Information in the help message, returned by ``numjuggler -h mode`` is
 outdated. Therefore, the best way to see all current modes is to search for
 ``args.mode == `` string in ``main.py``, and read comments in the correspondent
 sections of code.
 
+## Documentation
 
+https://numjuggler.readthedocs.io should be considered as the main source of information. 
+
+There is also a github repo [numjuggler.docs](https://github.com/inr-kit/numjuggler.docs) containing presentations and reports related to numjuggler. 
+
+## Install
+The numjuggler package is available at PyPI: https://pypi.org/project/numjuggler/. The preffered
+way to install it using pip:
+
+    >pip install numjuggler
+    
+Alternatively, one can clone from github and install in so-called development mode:
+
+    >git clone git@github.com:travleev/numjuggler.git
+    >cd numjuggler
+    >pip install -e .
+
+<!---
 
 # numjuggler
 Tool to rename cells, surfaces, materials and universes in MCNP input files. See https://numjuggler.readthedocs.io
@@ -54,3 +78,4 @@ instructions:
 
 There is also a github repo, [numjuggler.docs](https://github.com/inr-kit/numjuggler.docs), related to numjuggler documentation.
 
+--->
