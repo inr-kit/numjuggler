@@ -178,6 +178,11 @@ def main(args=sys.argv[1:]):
                                   debuglog,
                                   preservetabs=args.preservetabs))
 
+        # define output string stream
+        from io import StringIO
+        outstr = StringIO()
+
+        # perform operations based on 77
         if args.mode == 'info':
             indent = ' '*8
             for c in cards:
@@ -191,12 +196,12 @@ def main(args=sys.argv[1:]):
             for t in types:
                 if t[0] != '#':  # for meaning of '#' see parser.
                     nset = set(d.get(t, []))
-                    print('-' * 40, t, len(nset))
-                    print('-' * 20, t, ' list', end='')
-                    print(' '.join(map(str, rin.shorten(sorted(nset)))))
+                    print('-' * 40, t, len(nset), file=outstr)
+                    print('-' * 20, t, ' list', end='', file=outstr)
+                    print(' '.join(map(str, rin.shorten(sorted(nset)))), file=outstr)
                     rp = None
                     for r1, r2 in mn._get_ranges_from_set(nset):
-                        print('{}{:>3s}'.format(indent, t[0]), end='')
+                        print('{}{:>3s}'.format(indent, t[0]), end='', file=outstr)
                         if r1 == r2:
                             rs = ' {}'.format(r1)
                         else:
@@ -206,16 +211,16 @@ def main(args=sys.argv[1:]):
                         else:
                             fr = ''
                         ur = '{}'.format(r2 - r1 + 1)
-                        print('{:<30s} {:>8s} {:>8s}'.format(rs, ur, fr))
+                        print('{:<30s} {:>8s} {:>8s}'.format(rs, ur, fr), file=outstr)
                         rp = r2
         elif args.mode == 'remh':
             stc.remove_hash(cards,args.log)
             for c in cards:
                if c.cstrg :   # strg: flags setting if card has been modified with remove
                   c.get_input()
-                  print(c.card(True), end='')
+                  print(c.card(True), end='', file=outstr)
                else:
-                  print(c.card(), end='')
+                  print(c.card(), end='', file=outstr)
 
         elif args.mode == 'remrp':
             print_log = False
@@ -238,9 +243,9 @@ def main(args=sys.argv[1:]):
                           flog.write(' {:>9s} : nochg\n'.format(cname))
                        else:
                           flog.write(' {:>9s} : {:>5}\n'.format(cname,cardstr.geom.removedp[0]))
-                  print(c.card(True), end='')
+                  print(c.card(True), end='', file=outstr)
                else:
-                  print(c.card(), end='')
+                  print(c.card(), end='', file=outstr)
 
         elif args.mode == 'ext':
             # output list of cells for ext:n card
@@ -279,7 +284,7 @@ def main(args=sys.argv[1:]):
                         for t, (val, fmt) in mdef.items():
                             dnew *= val
                         c.set_d(fmt.format(dnew))
-                print(c.card(), end='')
+                print(c.card(), end='', file=outstr)
 
 
         elif args.mode == 'tallies':
@@ -318,16 +323,16 @@ def main(args=sys.argv[1:]):
                 farg['u' + str(k)] = ' '.join(map(str, rin.shorten(sorted(v))))
 
             # Tally card
-            print(fmt.format(**farg))
+            print(fmt.format(**farg), file=outstr)
 
             # SD card. Requires tally number and number of cells
             nt = fmt.split(':')[0][1:]
             nc = len(csets[ulst[0]])  # number of cells
-            print('sd{} 1 {}r'.format(nt, nc - 1))
-            print('fc{} '.format(nt), end='')
+            print('sd{} 1 {}r'.format(nt, nc - 1), file=outstr)
+            print('fc{} '.format(nt), end='', file=outstr)
             for u in ulst:
-                print(len(csets[u]), end='')
-            print()
+                print(len(csets[u]), end='', file=outstr)
+            print('', file=outstr)
 
         elif args.mode == 'addgeom':
             # add stuff to geometry definition of cells.
@@ -371,9 +376,9 @@ def main(args=sys.argv[1:]):
                         c.geom_prefix = s1
                         c.geom_suffix = s2
                     if c.name not in rem:
-                        print(c.card(), end='')
+                        print(c.card(), end='', file=outstr)
                 else:
-                    print(c.card(), end='')
+                    print(c.card(), end='', file=outstr)
 
         elif args.mode == 'merge':
             # Merge treats models as the main one and an additional one.  Title
@@ -400,8 +405,8 @@ def main(args=sys.argv[1:]):
                 mb = []
             if mb:
                 for c in mb:
-                    print(c.card(), end='')
-                print('')
+                    print(c.card(), end='', file=outstr)
+                print('', file=outstr)
 
             # Title:
             if args.t == "0":
@@ -409,7 +414,7 @@ def main(args=sys.argv[1:]):
                 t = blk1[mp.CID.title][0].card()[:-1]
             else:
                 t = args.t
-            print(t)
+            print(t, file=outstr)
 
             # Comments, denoting blocks of the additional model:
             if args.c == "0":
@@ -424,7 +429,7 @@ def main(args=sys.argv[1:]):
             # Cells, surfaces and data:
             for t in [mp.CID.cell, mp.CID.surface, mp.CID.data]:
                 for c in blk1[t]:
-                    print(c.card(), end='')
+                    print(c.card(), end='', file=outstr)
 
                 if t in blk2 and blk2[t]:
                     # First check if blk2 actually contains any cards:
@@ -434,14 +439,14 @@ def main(args=sys.argv[1:]):
                             flg = True
                             break
                     if flg:
-                        print(cmnt.format('start', mp.CID.get_name(t)))
+                        print(cmnt.format('start', mp.CID.get_name(t)), file=outstr)
                         for c in blk2[t]:
-                            print(c.card(), end='')
-                        print(cmnt.format('end', mp.CID.get_name(t)))
+                            print(c.card(), end='', file=outstr)
+                        print(cmnt.format('end', mp.CID.get_name(t)), file=outstr)
 
                 if t != mp.CID.data:
                     # do not add empty line after data block
-                    print('')
+                    print('', file=outstr)
 
         elif args.mode == 'uexp':
             if args.u == "0":
@@ -473,22 +478,22 @@ def main(args=sys.argv[1:]):
                     if (cfunc(c.name) and
                        'u' not in [t[1] for t in c.values]):
                         c.input[-1] += N  # ' u=0'
-                print(c.card(), end='')
+                print(c.card(), end='', file=outstr)
 
         elif args.mode == 'wrap':
             for c in cards:
-                print(c.card(wrap=True), end='')
+                print(c.card(wrap=True), end='', file=outstr)
 
         elif args.mode == 'rems':
             for c in cards:
                 c.remove_spaces()
-                print(c.card(), end='')
+                print(c.card(), end='', file=outstr)
 
         elif args.mode == 'remc':
             for c in cards:
                 if c.ctype == mp.CID.comment:
                     continue
-                print(c.card(), end='')
+                print(c.card(), end='', file=outstr)
 
         elif args.mode == 'split':
             blocks = mp.get_blocks(cards)
@@ -527,7 +532,7 @@ def main(args=sys.argv[1:]):
             # analyse material cards:
             i = 1
             for s, m in list(sd.items()):
-                print(i, m)
+                print(i, m, file=outstr)
                 i += 1
 
         elif args.mode == 'mdupl':
@@ -538,10 +543,10 @@ def main(args=sys.argv[1:]):
                 c.get_values()
                 if c.ctype == mp.CID.data and c.dtype == 'Mn':
                     if c.values[0][0] not in mset:
-                        print(c.card(), end='')
+                        print(c.card(), end='', file=outstr)
                         mset.add(c.values[0][0])
                 else:
-                    print(c.card(), end='')
+                    print(c.card(), end='', file=outstr)
 
         elif args.mode == 'mnew':
             # read from map definition of new materials in terms of existing
@@ -577,8 +582,8 @@ def main(args=sys.argv[1:]):
                     r.append(rmd[i[0]])
                     r.append((i[1] * i[2], 2))
                 m = Material(*r)
-                print('\nc '.join(m.report().splitlines()))
-                print(m.card().format(n))
+                print('\nc '.join(m.report().splitlines()), file=outstr)
+                print(m.card().format(n), file=outstr)
 
 
         elif args.mode == 'sdupl':
@@ -605,17 +610,17 @@ def main(args=sys.argv[1:]):
                                               pci=pcl.get(c.stype, [])):
                             # If c is close to s, print s instead
                             s.values[0] = (c.values[0][0], s.values[0][1])
-                            print(s.card(), end='')
+                            print(s.card(), end='', file=outstr)
                             s.values[0] = (sn, s.values[0][1])
                             break
                     else:
                         # add c to us:
                         cn = c.values[0][0]  # surface name
                         ust[cn] = c
-                        print(c.card(), end='')
+                        print(c.card(), end='', file=outstr)
                         # print 'is unique'
                 else:
-                    print(c.card(), end='')
+                    print(c.card(), end='', file=outstr)
 
         elif args.mode == 'msimp':
             # simplify material cards
@@ -629,7 +634,7 @@ def main(args=sys.argv[1:]):
                         for i in c.input[1:]:
                             inp.append('c msimpl ' + i)
                         c.input = inp
-                print(c.card(), end='')
+                print(c.card(), end='', file=outstr)
 
         elif args.mode == 'remu':
             if args.u[0] == '!':
@@ -701,7 +706,7 @@ def main(args=sys.argv[1:]):
                 elif (c.ctype == mp.CID.data and
                       c.dtype == 'Mn' and
                       c.values[0][0] not in mset):
-                    print('c qqq', repr(c.values[0][0]))
+                    print('c qqq', repr(c.values[0][0]), file=outstr)
                     pass
                 else:
                     # check that cell card does not depend on one of cset:
@@ -717,27 +722,27 @@ def main(args=sys.argv[1:]):
 
                     # Insert additional cell
                     if prevctype == mp.CID.cell and c.ctype == mp.CID.blankline:
-                        print(newcell)
+                        print(newcell, file=outstr)
 
-                    print(c.card(), end='')
+                    print(c.card(), end='', file=outstr)
 
                     # Insert additional surface
                     if prevctype == mp.CID.cell and c.ctype == mp.CID.blankline:
-                        print(newsurf)
+                        print(newsurf, file=outstr)
 
                 if c.ctype != mp.CID.comment:
                     prevctype = c.ctype
 
-            print('c sset', ' '.join(map(str, rin.shorten(sorted(sset)))))
-            print('c uref', ' '.join(map(str, rin.shorten(sorted(uref)))))
+            print('c sset', ' '.join(map(str, rin.shorten(sorted(sset)))), file=outstr)
+            print('c uref', ' '.join(map(str, rin.shorten(sorted(uref)))), file=outstr)
             # print dummy universes, just in case they are needed
-            print()
+            print('', file=outstr)
             l = len(str(max(uref)))
             f = '{{0:0{}d}}'.format(l)
             for u in sorted(uref):
                 s = f.format(u)
-                print('dummy_prefix{0} 0 dummy_surface u={0}'.format(s))
-            print('c mset', ' '.join(map(str, rin.shorten(sorted(mset)))))
+                print('dummy_prefix{0} 0 dummy_surface u={0}'.format(s), file=outstr)
+            print('c mset', ' '.join(map(str, rin.shorten(sorted(mset)))), file=outstr)
 
         elif args.mode == 'combinec':
             # Combine cells, listed in -c flag.
@@ -768,11 +773,11 @@ def main(args=sys.argv[1:]):
             for c in cards:
                 if c.ctype == mp.CID.cell:
                     if c.name in clst1[1:]:
-                        print('c ' + '\nc '.join(c.card().splitlines()))
+                        print('c ' + '\nc '.join(c.card().splitlines()), file=outstr)
                     else:
-                        print(c.card(), end='')
+                        print(c.card(), end='', file=outstr)
                 else:
-                    print(c.card(), end='')
+                    print(c.card(), end='', file=outstr)
 
 
         elif args.mode == 'zrotate':
@@ -803,7 +808,7 @@ def main(args=sys.argv[1:]):
                         # put new tr card just before the 1-st tr card in the
                         # input:
                         if trcard:
-                            print(trcard)
+                            print(trcard, file=outstr)
                             trcard = None
                         # apply changes, assuming that tr card contains all 12
                         # entries:
@@ -850,7 +855,7 @@ def main(args=sys.argv[1:]):
                             c.values[7] = (b4, 'float')
                             c.values[8] = (b5, 'float')
 
-                print(c.card(), end='')
+                print(c.card(), end='', file=outstr)
 
         elif args.mode == 'annotate':
             # Read text from map file, add "c" to each line and put after the
@@ -865,10 +870,10 @@ def main(args=sys.argv[1:]):
             txt = [cs + l for l in open(args.map).readlines()]
 
             for c in cards:
-                print(c.card(), end='')
+                print(c.card(), end='', file=outstr)
                 if c.ctype == mp.CID.title:
                     for l in txt:
-                        print(l, end='')   # readlines() method returns lines with \n
+                        print(l, end='', file=outstr)   # readlines() method returns lines with \n
 
         elif args.mode == 'getc':
             # Extract comments that take more than 10 lines:
@@ -882,8 +887,8 @@ def main(args=sys.argv[1:]):
                     ccc = c.card()
                     l = len(ccc.splitlines())
                     if l >= N:
-                        print(c.pos, l)
-                        print(ccc, end='')
+                        print(c.pos, l, file=outstr)
+                        print(ccc, end='', file=outstr)
 
         elif args.mode == 'extr':
             # extract cell specified in -c keyword and necessary materials, and
@@ -928,7 +933,7 @@ def main(args=sys.argv[1:]):
             if flag == '!':
                 cset = aset.difference(cset)
             if not cset:
-                print("No cells to extract are specified")
+                print("No cells to extract are specified", file=outstr)
                 raise Exception
 
             # first, get all surfaces needed to represent the cn cell.
@@ -999,24 +1004,24 @@ def main(args=sys.argv[1:]):
             blk = None
             for c in cards:
                 if c.ctype == mp.CID.title:
-                    print(c.card(), end='')
+                    print(c.card(), end='', file=outstr)
                 if c.ctype == mp.CID.cell and c.name in cset:
-                    print(c.card(), end='')
+                    print(c.card(), end='', file=outstr)
                     blk = c.ctype
                 if c.ctype == mp.CID.surface:
                     if blk == mp.CID.cell:
-                        print()
+                        print('', file=outstr)
                         blk = c.ctype
                     if c.name in sset:
-                        print(c.card(), end='')
+                        print(c.card(), end='', file=outstr)
                 if c.ctype == mp.CID.data:
                     if blk != c.ctype:
-                        print()
+                        print('', file=outstr)
                         blk = c.ctype
                     if c.dtype == 'Mn' and c.values[0][0] in mset:
-                        print(c.card(), end='')
+                        print(c.card(), end='', file=outstr)
                     if c.dtype == 'TRn':  # and c.values[0][0] in tset:
-                        print(c.card(), end='')
+                        print(c.card(), end='', file=outstr)
 
         elif args.mode == 'nogq':
             from numjuggler import nogq
@@ -1061,12 +1066,12 @@ def main(args=sys.argv[1:]):
                             crd += '{} {} c/z {:15.8e} 0 {:15.8e}\n'.format(
                                 c.name, trn + trn0, x0, R)
                             # crd += 'c a^2={:12.6e} g={:12.6e} k={}\n'.format(a2, g, kk)
-                print(crd, end='')
+                print(crd, end='', file=outstr)
                 if trd and c.ctype == mp.CID.blankline:
                     # this is blankline after surfaces. Put tr cards here
                     for k, v in sorted(trd.items()):
                         ijk = (k + trn0,) + v
-                        print(tfmt.format(*ijk))
+                        print(tfmt.format(*ijk), file=outstr)
                     trd = {}
 
         elif args.mode == 'nogq2':
@@ -1088,9 +1093,9 @@ def main(args=sys.argv[1:]):
                     if c.stype == 'gq':
                         tuf, pl = nogq2.get_params(' '.join(c.input))
                         typ, a, o, t2, r2, cl = nogq2.get_cone_or_cyl(pl)
-                        print('c Log for GQ card {}'.format(c.name))
+                        print('c Log for GQ card {}'.format(c.name), file=outstr)
                         for comment in cl:
-                            print(comment)
+                            print(comment, file=outstr)
                         crd1 = crd.splitlines()
                         if typ in 'ck' and not tuf and trn + trn0 < 999:
                             bbb, aaa = nogq2.basis_on_axis(a)
@@ -1149,12 +1154,12 @@ def main(args=sys.argv[1:]):
                             # and print additional information
                             crd = multiline(crd1 + cl) + '\n'
 
-                print(crd, end='')
+                print(crd, end='', file=outstr)
                 if trd and c.ctype == mp.CID.blankline:
                     # this is blankline after surfaces. Put tr cards here
                     for k, v in sorted(trd.items()):
                         v = (0, 0, 0) + v
-                        print(tr2str(v).format(k + trn0))
+                        print(tr2str(v).format(k + trn0), file=outstr)
                         # ijk = (k + trn0,) + v
                         # print(tfmt.format(*ijk))
                     trd = {}
@@ -1168,7 +1173,7 @@ def main(args=sys.argv[1:]):
                                        'Line',
                                        'all',
                                        'unique',
-                                       '>{}'.format(Nmax)))
+                                       '>{}'.format(Nmax)), file=outstr)
             sc = 0  # cell counter
             sa = 0  # all surfaces counter
             su = 0  # unique surface counter
@@ -1186,19 +1191,19 @@ def main(args=sys.argv[1:]):
                     # output number of surfaces:
                     a = len(los)       # number of all surfaces
                     u = len(set(los))  # number of unique surfaces
-                    print(('{:>10d}'*4).format(c.name, c.pos, a, u), end='')
+                    print(('{:>10d}'*4).format(c.name, c.pos, a, u), end='', file=outstr)
                     if a > Nmax:
-                        print(' *')
+                        print(' *', file=outstr)
                     else:
-                        print(' ')
+                        print(' ', file=outstr)
                     sc += 1
                     sa += a
                     su += u
                     ma = max(ma, a)
                     mu = max(mu, u)
-            print()
-            print('sum', ('{:>10d}'*3).format(sc, sa, su))
-            print('max', ('{:>10d}'*3).format(00, ma, mu))
+            print('', file=outstr)
+            print('sum', ('{:>10d}'*3).format(sc, sa, su), file=outstr)
+            print('max', ('{:>10d}'*3).format(00, ma, mu), file=outstr)
 
         elif args.mode == 'nofill':
             # remove all fill= keywords from cell cards.
@@ -1226,7 +1231,7 @@ def main(args=sys.argv[1:]):
                 lines = '\n'.join(filter(lambda s: s.strip(),
                                          c.card().splitlines()))
 
-                print(lines)
+                print(lines, file=outstr)
 
 
         elif args.mode == 'matinfo':
@@ -1248,22 +1253,22 @@ def main(args=sys.argv[1:]):
 
             # print out information
             fmt = ' '*8 + '{:>16}'*3
-            print(fmt.format('Cell', 'density', 'universe'))
+            print(fmt.format('Cell', 'density', 'universe'), file=outstr)
             for m in sorted(res.keys()):
                 uset = set()
                 for c, d, u in res[m]:
                     uset.add(u)
                 print('m{} -------------- {} {}'.format(m,
                                                         len(uset),
-                                                        sorted(uset)))
+                                                        sorted(uset)), file=outstr)
 
                 for c, d, u in res[m]:
-                    print(fmt.format(c, d, u))
+                    print(fmt.format(c, d, u), file=outstr)
 
                 # Get a compact list of cells for material m
                 cells = list(e[0] for e in res[m])
-                print('Compact list of cells for material m{}: '.format(m))
-                print(' '.join(map(str, rin.shorten(cells))))
+                print('Compact list of cells for material m{}: '.format(m), file=outstr)
+                print(' '.join(map(str, rin.shorten(cells))), file=outstr)
 
 
 
@@ -1297,15 +1302,15 @@ def main(args=sys.argv[1:]):
                     if c.ctype == mp.CID.surface:
                         break
 
-                print(('{:>20s}'*3).format('Material', 'Volume', 'Weight'))
+                print(('{:>20s}'*3).format('Material', 'Volume', 'Weight'), file=outstr)
                 sv = 0.0
                 sw = 0.0
                 for m, (v, w) in sorted(res.items()):
-                    print('{:20d}{:20e}{:20e}'.format(m, v, w))
+                    print('{:20d}{:20e}{:20e}'.format(m, v, w), file=outstr)
                     if m > 0:
                         sv += v
                         sw += w
-                print('{:>20s}{:20e}{:20e}'.format('total nonvoid:', sv, sw))
+                print('{:>20s}{:20e}{:20e}'.format('total nonvoid:', sv, sw), file=outstr)
 
 
         elif args.mode == 'uinfo':
@@ -1332,23 +1337,23 @@ def main(args=sys.argv[1:]):
                 for u, l in sorted(res.items()):
                     if sflag:
                         l = sorted(l)
-                    print('u{} '.format(u), end='')
+                    print('u{} '.format(u), end='', file=outstr)
                     for e in rin.shorten(l):
-                        print(e, end=' ')
-                    print()
-                    print(len(l))
+                        print(e, end=' ', file=outstr)
+                    print('', file=outstr)
+                    print(len(l), file=outstr)
             else:
                 uref = int(args.u)
                 l = res[uref]
                 if sflag:
                     l = sorted(l)
                 for e in rin.shorten(l):
-                    print(e, end='')
+                    print(e, end='', file=outstr)
             # print tabulated "tree", see E-mail of Marco Fabri, 8.11.2017
             for u, cl in sorted(res.items()):
-                print('Cells in universe ', u)
+                print('Cells in universe ', u, file=outstr)
                 for c in cl:
-                    print(c, fd.get(c, ''))
+                    print(c, fd.get(c, ''), file=outstr)
 
 
 
@@ -1360,7 +1365,7 @@ def main(args=sys.argv[1:]):
                         c.get_values()
                         i = c.get_imp()
                         if 0 in list(i.values()):
-                            print(c.card(), end='')
+                            print(c.card(), end='', file=outstr)
             else:
                 nv = {}
                 for t in args.m.split():
@@ -1370,7 +1375,7 @@ def main(args=sys.argv[1:]):
                     if c.ctype == mp.CID.cell:
                         c.get_values()
                         c.get_imp(nv)
-                    print(c.card(), end='')
+                    print(c.card(), end='', file=outstr)
 
         elif args.mode == 'sinfo':
             # first, get the list of surfaces:
@@ -1390,9 +1395,9 @@ def main(args=sys.argv[1:]):
                             sl[v][0].add(c.name)
             # print out:
             for s, (cs, t) in sorted(sl.items()):
-                print(s, t, sorted(cs))
+                print(s, t, sorted(cs), file=outstr)
             for s in sorted(st):
-                print(s)
+                print(s, file=outstr)
 
         elif args.mode == 'minfo':
 
@@ -1443,12 +1448,12 @@ def main(args=sys.argv[1:]):
 
             pcel = float(mljacell)/mlja
             phash = 1 - pcel
-            print ( countfmt.format(d=stat_tot) )
-            print ( cellfmt.format( longest_c, maxword ))
-            print ( mcnpfmt.format( mlja, mem, munits[im], pcel, phash ))
-            print ( '\n   Cell name    total #   cell #   surf #'  )
+            print ( countfmt.format(d=stat_tot) , file=outstr)
+            print ( cellfmt.format( longest_c, maxword ), file=outstr)
+            print ( mcnpfmt.format( mlja, mem, munits[im], pcel, phash ), file=outstr)
+            print ( '\n   Cell name    total #   cell #   surf #'  , file=outstr)
             for c in hashlist:
-                print ( hashcellfmt.format(c[0],d=c[1]) )
+                print ( hashcellfmt.format(c[0],d=c[1]) , file=outstr)
 
         elif args.mode == 'vsource':
 
@@ -1483,29 +1488,29 @@ def main(args=sys.argv[1:]):
                 zs = mz - (dz*0.5 - d)*v
                 if u in 'xX':
                     fmt = 'sdef x {:12} y d2  z d3  vec {} dir 1 wgt {}'
-                    print(fmt.format(xs, '{} 0 0'.format(v), dz*dy))
+                    print(fmt.format(xs, '{} 0 0'.format(v), dz*dy), file=outstr)
                 elif u in 'yY':
                     fmt = 'sdef y {:12} x d1  z d3  vec {} dir 1 wgt {}'
-                    print(fmt.format(ys, '0 {} 0'.format(v), dx*dz))
+                    print(fmt.format(ys, '0 {} 0'.format(v), dx*dz), file=outstr)
                 elif u in 'zZ':
                     fmt = 'sdef z {:12} x d1  y d2  vec {} dir 1 wgt {}'
-                    print(fmt.format(zs, '0 0 {}'.format(v), dx*dy))
+                    print(fmt.format(zs, '0 0 {}'.format(v), dx*dy), file=outstr)
 
                 fm2 = 'si{:1} h {:12} {:12} $ {} {}'
-                print(fm2.format(1, x1 + d, x2 - d, dx, mx))
-                print(fm2.format(2, y1 + d, y2 - d, dy, my))
-                print(fm2.format(3, z1 + d, z2 - d, dz, mz))
+                print(fm2.format(1, x1 + d, x2 - d, dx, mx), file=outstr)
+                print(fm2.format(2, y1 + d, y2 - d, dy, my), file=outstr)
+                print(fm2.format(3, z1 + d, z2 - d, dz, mz), file=outstr)
                 fm3 = 'sp{:1} d 0 1'
-                print(fm3.format(1))
-                print(fm3.format(2))
-                print(fm3.format(3))
+                print(fm3.format(1), file=outstr)
+                print(fm3.format(2), file=outstr)
+                print(fm3.format(3), file=outstr)
 
             def print_spherical(s, r):
                 """
                 s -- spherical surface number, r -- its radius. Radius is
                 needed to compute weight for volume calculations.
                 """
-                print('sdef sur {} nrm -1 wgt {:12.7e}'.format(s, Pi * r**2))
+                print('sdef sur {} nrm -1 wgt {:12.7e}'.format(s, Pi * r**2), file=outstr)
 
             # Set of surface names to be checked for surface source candidates
             sset = set()
@@ -1540,8 +1545,8 @@ def main(args=sys.argv[1:]):
             for k, v in surfaces.items():
                 if v is not None:
                     n1, v1, n2, v2 = v
-                    print('c ', k, n1, v1)
-                    print('c ', k, n2, v2)
+                    print('c ', k, n1, v1, file=outstr)
+                    print('c ', k, n2, v2, file=outstr)
                 elif k == 's' and args.u in 'sS':
                     # propose parameters of the circumscribing sphere
                     x = surfaces['x']
@@ -1558,12 +1563,12 @@ def main(args=sys.argv[1:]):
                     d = mn.get_numbers(cards)
                     ns = max(d['sur']) + 1
                     nc = max(d['cel']) + 1
-                    print('c universe with circumscribing sphere')
-                    print('{} 0 {} imp:n=1 imp:p=1 u=1 '.format(nc, -ns))
-                    print('{} 0  {} imp:n=0 imp:p=0 u=1 '.format(nc+1, ns))
-                    print()
-                    print('c Circumscribing sphere: ')
-                    print(ns, k, cx, cy, cz, r)
+                    print('c universe with circumscribing sphere', file=outstr)
+                    print('{} 0 {} imp:n=1 imp:p=1 u=1 '.format(nc, -ns), file=outstr)
+                    print('{} 0  {} imp:n=0 imp:p=0 u=1 '.format(nc+1, ns), file=outstr)
+                    print('', file=outstr)
+                    print('c Circumscribing sphere: ', file=outstr)
+                    print(ns, k, cx, cy, cz, r, file=outstr)
                     surfaces[k] = (ns, r, ns, r)
                     print_sdef = False
 
@@ -1573,7 +1578,7 @@ def main(args=sys.argv[1:]):
                 params = []
                 for k in 'xyz':
                     if surfaces[k] is None:
-                        print(k)
+                        print(k, file=outstr)
                         raise ValueError('Planes not found for planar source')
                     else:
                         n1, v1, n2, v2 = surfaces[k]
@@ -1588,7 +1593,7 @@ def main(args=sys.argv[1:]):
                     print_spherical(n2, v2)
 
             if args.c != '0':
-                print('c source from -c parameters')
+                print('c source from -c parameters', file=outstr)
                 vals = list(map(float, args.c.split()))
                 if len(vals) == 6:
                     # x, y and z range of a box:
@@ -1638,7 +1643,7 @@ def main(args=sys.argv[1:]):
                         imp = c.get_imp()
                         if imp['imp:n'] > 0 and m == M and f in [0, None]:
                             c.input[-1] += N
-                print(c.card(), end='')
+                print(c.card(), end='', file=outstr)
 
         elif args.mode == 'renum':
             if args.map:
@@ -1674,11 +1679,20 @@ def main(args=sys.argv[1:]):
 
             for c in cards:
                 c.apply_map(maps)
-                print(c.card(), end='')
+                print(c.card(), end='', file=outstr)
 
             if args.log != '':
                 for k, m in maps.items():
                     m.write_log_as_map(k[0], args.log)
+
+        # dump output string to stdout
+        print(outstr.getvalue())
+        import os
+        filename, _ = os.path.splitext(args.inp)
+        outfile = '.'.join((filename, args.mode + '.txt'))
+        with open(outfile, mode='w', encoding='ascii', errors='backslashreplace') as fout:
+            fout.write(outstr.getvalue())
+        outstr.close()
 
 
 if __name__ == '__main__':
